@@ -1,0 +1,84 @@
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: agenthive-postgres
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-agenthive}
+      POSTGRES_USER: ${POSTGRES_USER:-agenthive}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-agenthive}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-agenthive} -d ${POSTGRES_DB:-agenthive}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: agenthive-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  minio:
+    image: minio/minio:latest
+    container_name: agenthive-minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY:-agenthive}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY:-agenthive123}
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: agenthive-ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+
+  loki:
+    image: grafana/loki:2.9.8
+    container_name: agenthive-loki
+    ports:
+      - "3100:3100"
+    command: -config.file=/etc/loki/local-config.yaml
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: agenthive-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./infra/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: agenthive-grafana
+    ports:
+      - "3001:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+    depends_on:
+      - prometheus
+      - loki
+
+volumes:
+  postgres_data:
+  redis_data:
+  minio_data:
+  ollama_data:
+  grafana_data:

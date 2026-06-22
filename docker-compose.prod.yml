@@ -1,0 +1,59 @@
+services:
+  frontend:
+    build:
+      context: ./frontend
+      target: prod
+    restart: unless-stopped
+    environment:
+      NEXT_PUBLIC_API_URL: /api
+    depends_on:
+      - backend
+
+  backend:
+    build:
+      context: ./backend
+      target: prod
+    restart: unless-stopped
+    env_file:
+      - .env
+    command: gunicorn app.main:app -k uvicorn.workers.UvicornWorker --bind 0.0.0.0:8000 --workers 4 --timeout 120
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  worker:
+    build:
+      context: ./backend
+      target: prod
+    restart: unless-stopped
+    env_file:
+      - .env
+    command: celery -A app.jobs.worker worker --loglevel=info --concurrency=4
+    depends_on:
+      - redis
+      - postgres
+
+  scheduler:
+    build:
+      context: ./backend
+      target: prod
+    restart: unless-stopped
+    env_file:
+      - .env
+    command: celery -A app.jobs.worker beat --loglevel=info
+    depends_on:
+      - redis
+      - postgres
+
+  nginx:
+    image: nginx:alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    volumes:
+      - ./infra/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - frontend
+      - backend

@@ -1,0 +1,15 @@
+fastapi
+uvicorn[standard]
+gunicorn
+pydantic-settings
+sqlalchemy
+psycopg[binary]
+redis
+celery
+watchdog
+structlog
+loguru
+opentelemetry-api
+opentelemetry-sdk
+httpx
+python-multipart
