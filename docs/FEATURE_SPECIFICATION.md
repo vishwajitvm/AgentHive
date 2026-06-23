@@ -202,3 +202,8 @@ Secrets must be encrypted. Raw secrets must not be logged.
 - User can save Hugging Face key.
 - User can configure Ollama URL.
 - Secret changes are audited.
+
+### Context Features
+- **Workspace File Uploads**: Users can upload documents (e.g. PDFs) directly from the Agent Console to the backend Workspace directory. These files are then accessible via ile_tool or pdf_tool for analysis.
+- **Session Credentials/Context**: Users can temporarily inject social media usernames, passwords, or context variables into the active run without exposing them in the global environment variables or saving them persistently.
+
