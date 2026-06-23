@@ -25,6 +25,25 @@ export async function getAgent(id: number) {
   return response.json();
 }
 
+export async function listTools() {
+  const response = await fetch(`${API_URL}/api/tools`, { cache: 'no-store' });
+  if (!response.ok) throw new Error('Failed to list tools');
+  return response.json();
+}
+
+export async function runTool(slug: string, payload: any) {
+  const response = await fetch(`${API_URL}/api/tools/${slug}/run`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+  if (!response.ok) {
+    const err = await response.json();
+    throw new Error(err.detail || 'Failed to execute tool');
+  }
+  return response.json();
+}
+
 export async function createAgent(payload: any) {
   const response = await fetch(`${API_URL}/api/agents`, {
     method: 'POST',
@@ -54,13 +73,28 @@ export async function deleteAgent(id: number) {
   return response.json();
 }
 
-export async function runAgent(id: number, query: string, background: boolean = false) {
-  const response = await fetch(`${API_URL}/api/agents/${id}/run?background=${background}`, {
+export async function runAgent(agentId: number, query: string, background: boolean = false) {
+  const response = await fetch(`${API_URL}/api/agents/${agentId}/run?background=${background}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ query })
   });
-  if (!response.ok) throw new Error('Failed to trigger agent execution');
+  if (!response.ok) throw new Error('Failed to run agent');
+  return response.json();
+}
+
+export async function uploadToWorkspace(file: File) {
+  const formData = new FormData();
+  formData.append('file', file);
+  
+  const response = await fetch(`${API_URL}/api/agents/workspace/upload`, {
+    method: 'POST',
+    body: formData
+  });
+  if (!response.ok) {
+    const err = await response.json();
+    throw new Error(err.detail || 'Failed to upload file');
+  }
   return response.json();
 }
 

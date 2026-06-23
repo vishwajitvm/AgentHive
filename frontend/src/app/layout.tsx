@@ -12,7 +12,8 @@ import {
   Activity,
   Heart,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Wrench
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -47,6 +48,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   const navItems = [
     { name: 'Dashboard', path: '/', icon: LayoutDashboard },
     { name: 'Agents', path: '/agents', icon: Bot },
+    { name: 'Tools Directory', path: '/tools', icon: Wrench },
     { name: 'Models & Policies', path: '/models', icon: Sliders },
     { name: 'Workflows', path: '/workflows', icon: Workflow },
     { name: 'Activity Logs', path: '/logs', icon: Terminal },

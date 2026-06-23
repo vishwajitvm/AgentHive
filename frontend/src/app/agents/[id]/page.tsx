@@ -14,7 +14,10 @@ import {
   Settings,
   Shield,
   Activity,
-  Cpu
+  Cpu,
+  CheckCircle,
+  UploadCloud,
+  FileText
 } from 'lucide-react';
 import Link from 'next/link';
 

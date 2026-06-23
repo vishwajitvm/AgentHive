@@ -1,7 +1,9 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, HTTPException, status, Query, UploadFile, File
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, delete
 from typing import List, Dict, Any, Optional
+import os
+import shutil
 from pydantic import BaseModel
 
 from app.core.database import get_db
@@ -239,3 +241,19 @@ async def get_run_steps(run_id: int, db: AsyncSession = Depends(get_db)):
         "steps": steps,
         "tool_calls": tool_calls
     }
+
+@router.post("/workspace/upload")
+async def upload_workspace_file(file: UploadFile = File(...)):
+    from app.tools.registry import WORKSPACE_DIR
+    try:
+        os.makedirs(WORKSPACE_DIR, exist_ok=True)
+        safe_name = os.path.basename(file.filename)
+        filepath = os.path.join(WORKSPACE_DIR, safe_name)
+        
+        with open(filepath, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+            
+        return {"success": True, "message": f"File '{safe_name}' uploaded successfully to workspace.", "filename": safe_name}
+    except Exception as e:
+        logger.exception("Failed to upload file to workspace", error=str(e))
+        raise HTTPException(status_code=500, detail=f"File upload failed: {str(e)}")
