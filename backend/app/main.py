@@ -2,7 +2,18 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.logging.logger import configure_logging, get_logger
+from app.core.database import init_db
+from app.agents.registry import initialize_agents
+from app.core.exceptions import AgentHiveException, agenthive_exception_handler
+
+# Import Routers
 from app.api.health import router as health_router
+from app.api.routes.agents import router as agents_router
+from app.api.routes.models import router as models_router
+from app.api.routes.workflows import router as workflows_router
+from app.api.routes.logs import router as logs_router
+from app.api.routes.settings import router as settings_router
+
 import time
 import uuid
 
@@ -18,6 +29,21 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Exception handlers
+app.add_exception_handler(AgentHiveException, agenthive_exception_handler)
+
+@app.on_event("startup")
+async def startup_event():
+    logger.info("Initializing AgentHive database...")
+    await init_db()
+    
+    logger.info("Pre-populating default agents...")
+    from app.core.database import AsyncSessionLocal
+    async with AsyncSessionLocal() as db:
+        await initialize_agents(db)
+        
+    logger.info("AgentHive API service has successfully started.")
 
 @app.middleware("http")
 async def request_logging_middleware(request: Request, call_next):
@@ -48,4 +74,10 @@ async def request_logging_middleware(request: Request, call_next):
         )
         raise
 
+# Register Routers
 app.include_router(health_router)
+app.include_router(agents_router, prefix="/api")
+app.include_router(models_router, prefix="/api")
+app.include_router(workflows_router, prefix="/api")
+app.include_router(logs_router, prefix="/api")
+app.include_router(settings_router, prefix="/api")

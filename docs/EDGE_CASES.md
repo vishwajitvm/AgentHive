@@ -8,11 +8,18 @@
 | Gemini token limit exceeded | Compress context, retry once, fallback if still too large |
 | Gemini invalid API key | Mark provider unhealthy, alert dashboard |
 | Ollama offline | Skip Ollama fallback, try next provider |
-| Ollama model not downloaded | Show dashboard action to pull model |
+| Ollama model not downloaded | Skip to next provider, log model missing |
 | Hugging Face rate limited | Retry with backoff, fallback |
 | GPT disabled | Router must not call GPT |
 | Provider returns empty output | Retry once, fallback |
 | Provider returns invalid format | Response normalizer attempts repair, then fallback |
+
+### Implemented MVP Fallback Details
+
+- **Simulated S3 Storage Fallback**: If MinIO is offline, the Storage Tool writes uploads to `workspace/s3_{object_name}` and reads from it during downloads, preventing agent execution crashes.
+- **Embedding Zero-Vector Backup**: If Gemini/Ollama embedding endpoints are offline, the embedding utility returns a 768-dimensional zero-vector, ensuring memory inserts/searches don't crash runs.
+- **Mock Web Search**: If Serper/Google search API keys are omitted, the Search Tool resolves common development terms (e.g. AgentHive, FastAPI, Next.js, Ollama) from local caches, allowing tests to run unauthenticated.
+- **Fernet Decryption Fail-safe**: If the local `ENCRYPTION_KEY` is modified or invalid, the encryption utility logs a warning and masks values, avoiding API startup loops.
 
 ## Token Edge Cases
 

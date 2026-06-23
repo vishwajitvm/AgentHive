@@ -13,3 +13,5 @@ opentelemetry-api
 opentelemetry-sdk
 httpx
 python-multipart
+cryptography
+pgvector
