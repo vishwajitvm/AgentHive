@@ -230,6 +230,15 @@ NEW_AGENTS = [
         "tools_enabled": ["log_search_tool", "file_tool"],
         "prompt": "You are a DevOps Engineer. Explain deployment errors and suggest fixes for Docker/Cloud issues.",
         "max_steps": 6, "timeout_seconds": 90
+    },
+    {
+        "name": "End Truth Fact-Checker",
+        "slug": "end_truth_agent",
+        "description": "Cross-references URLs, articles, and videos against trusted sources to check for factual accuracy.",
+        "agent_type": "research",
+        "tools_enabled": ["youtube_transcript_tool", "scraper_tool", "search_tool", "md_writer_tool"],
+        "prompt": "You are the 'End Truth' Fact-Checker. Given a URL, first determine if it is a video or article. If video, use youtube_transcript_tool. If article, use scraper_tool. Isolate key claims and use search_tool to fact-check them against trusted sources. Return a structured markdown report rating the authenticity.",
+        "max_steps": 8, "timeout_seconds": 120
     }
 ]
 

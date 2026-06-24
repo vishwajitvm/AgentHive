@@ -280,6 +280,17 @@ DEFAULT_TOOLS = [
         "requires_auth": False,
         "required_env_keys": [],
         "safe_mock_mode": False
+    },
+    {
+        "name": "YouTube Transcript Tool",
+        "slug": "youtube_transcript_tool",
+        "description": "Extracts spoken text/transcripts from YouTube video URLs.",
+        "category": "web",
+        "input_schema": {"url": "string"},
+        "output_schema": {"transcript": "string"},
+        "requires_auth": False,
+        "required_env_keys": [],
+        "safe_mock_mode": False
     }
 ]
 

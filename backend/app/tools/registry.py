@@ -2,6 +2,7 @@ import os
 import sys
 import httpx
 import json
+import re
 from typing import Dict, Any, List
 from app.tools.base import BaseTool
 from app.logging.logger import get_logger
@@ -352,6 +353,58 @@ class CodeTool(BaseTool):
             return f"Security Blocked/Error: {str(e)}"
 
 
+class YoutubeTranscriptTool(BaseTool):
+    """Tool to extract transcripts from YouTube videos."""
+    
+    @property
+    def slug(self) -> str:
+        return "youtube_transcript_tool"
+
+    @property
+    def name(self) -> str:
+        return "YouTube Transcript Tool"
+
+    @property
+    def description(self) -> str:
+        return (
+            "Extracts spoken text/transcripts from YouTube video URLs.\n"
+            "Arguments:\n"
+            "  - url: The YouTube video URL (required)\n"
+        )
+
+    async def run(self, **kwargs) -> str:
+        url = kwargs.get("url", "")
+        if not url:
+            return "Error: YouTube URL is required."
+
+        try:
+            from youtube_transcript_api import YouTubeTranscriptApi
+            # Extract video ID from URL
+            video_id = None
+            if "v=" in url:
+                video_id = url.split("v=")[1][:11]
+            elif "youtu.be/" in url:
+                video_id = url.split("youtu.be/")[1][:11]
+            
+            if not video_id:
+                return "Error: Could not extract a valid YouTube video ID from the provided URL."
+
+            # Fetch transcript
+            transcript_list = YouTubeTranscriptApi.get_transcript(video_id)
+            
+            # Combine transcript text
+            full_text = " ".join([entry['text'] for entry in transcript_list])
+            
+            # Truncate if insanely long to protect context windows (e.g. max 15000 chars)
+            if len(full_text) > 15000:
+                full_text = full_text[:15000] + "\n...[TRUNCATED]"
+                
+            return f"YouTube Video Transcript (ID: {video_id}):\n{full_text}"
+            
+        except Exception as e:
+            logger.exception("YoutubeTranscriptTool execution failure", error=str(e))
+            return f"Error extracting YouTube transcript: {str(e)}"
+
 class ToolRegistry:
     """Registry class for looking up and loading tools."""
 
@@ -361,7 +414,8 @@ class ToolRegistry:
             "pdf_tool": PDFTool(),
             "search_tool": SearchTool(),
             "storage_tool": StorageTool(),
-            "code_tool": CodeTool()
+            "code_tool": CodeTool(),
+            "youtube_transcript_tool": YoutubeTranscriptTool()
         }
 
     def get_tool(self, slug: str) -> BaseTool:
