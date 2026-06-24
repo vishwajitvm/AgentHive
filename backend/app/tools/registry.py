@@ -385,6 +385,8 @@ class YoutubeTranscriptTool(BaseTool):
                 video_id = url.split("v=")[1][:11]
             elif "youtu.be/" in url:
                 video_id = url.split("youtu.be/")[1][:11]
+            elif "/shorts/" in url:
+                video_id = url.split("/shorts/")[1][:11]
             
             if not video_id:
                 return "Error: Could not extract a valid YouTube video ID from the provided URL."

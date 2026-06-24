@@ -104,7 +104,7 @@ class BaseAgent:
             await db.commit()
 
             # 3. Parse action (TOOL or ANSWER)
-            tool_match = re.search(r'\[TOOL\]\s*([a-zA-Z0-9_\-]+)\s*\|\s*({.*?})', llm_output, re.DOTALL)
+            tool_match = re.search(r'\[(?:TOOL\]\s*)?([a-zA-Z0-9_\-]+)(?:\])?\s*\|\s*({.*?})', llm_output, re.DOTALL)
             answer_match = re.search(r'\[ANSWER\]\s*(.*)', llm_output, re.DOTALL)
 
             if tool_match:
