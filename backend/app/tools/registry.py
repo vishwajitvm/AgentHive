@@ -392,10 +392,10 @@ class YoutubeTranscriptTool(BaseTool):
                 return "Error: Could not extract a valid YouTube video ID from the provided URL."
 
             # Fetch transcript
-            transcript_list = YouTubeTranscriptApi.get_transcript(video_id)
+            res = YouTubeTranscriptApi().fetch(video_id)
             
             # Combine transcript text
-            full_text = " ".join([entry['text'] for entry in transcript_list])
+            full_text = " ".join([entry.text for entry in res.snippets])
             
             # Truncate if insanely long to protect context windows (e.g. max 15000 chars)
             if len(full_text) > 15000:
