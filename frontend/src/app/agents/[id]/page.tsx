@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
-import { getAgent, runAgent, getRunSteps } from '../../../lib/api';
+import { getAgent, runAgent, getRunSteps, uploadToWorkspace } from '../../../lib/api';
 import { 
   Bot, 
   Play, 
@@ -14,9 +14,13 @@ import {
   Settings,
   Shield,
   Activity,
-  Cpu
+  Cpu,
+  CheckCircle,
+  UploadCloud,
+  FileText
 } from 'lucide-react';
 import Link from 'next/link';
+import TraceDiagram from '../../../components/TraceDiagram';
 
 export default function AgentConsolePage() {
   const { id } = useParams();
@@ -28,6 +32,11 @@ export default function AgentConsolePage() {
   const [result, setResult] = useState<any>(null);
   const [trace, setTrace] = useState<any>({ steps: [], tool_calls: [] });
   const [error, setError] = useState('');
+  
+  // Context variables
+  const [sessionContext, setSessionContext] = useState('');
+  const [uploading, setUploading] = useState(false);
+  const [uploadStatus, setUploadStatus] = useState<string | null>(null);
 
   const fetchAgentInfo = async () => {
     try {
@@ -39,9 +48,24 @@ export default function AgentConsolePage() {
     }
   };
 
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || e.target.files.length === 0) return;
+    const file = e.target.files[0];
+    try {
+      setUploading(true);
+      setUploadStatus(null);
+      await uploadToWorkspace(file);
+      setUploadStatus(`Uploaded: ${file.name}`);
+    } catch (err: any) {
+      setUploadStatus(`Error: ${err.message}`);
+    } finally {
+      setUploading(false);
+    }
+  };
+
   const handleRun = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!query.strip && !query) return;
+    if (!query.trim() && !query) return;
 
     setRunning(true);
     setResult(null);
@@ -49,11 +73,14 @@ export default function AgentConsolePage() {
     setError('');
 
     try {
-      // Trigger synchronous execution for immediate output trace
-      const data = await runAgent(agentId, query, false);
+      // Inject session context if present
+      const finalQuery = sessionContext.trim() 
+        ? `[SYSTEM SECRETS/CONTEXT FOR THIS SESSION]:\n${sessionContext}\n\n[USER INSTRUCTION]:\n${query}` 
+        : query;
+
+      const data = await runAgent(agentId, finalQuery, false);
       setResult(data);
       
-      // Fetch trace steps
       if (data.agent_run_id) {
         const traceData = await getRunSteps(data.agent_run_id);
         setTrace(traceData);
@@ -127,6 +154,41 @@ export default function AgentConsolePage() {
             </form>
           </div>
 
+          {/* Context & File Upload */}
+          <div className="rounded-xl border border-slate-900 bg-slate-950/20 p-6 space-y-5">
+            <h3 className="font-bold text-sm flex items-center gap-2 text-slate-300 border-b border-slate-900 pb-2">
+              <Shield size={16} className="text-sky-400" /> Workspace Context & Secrets
+            </h3>
+            
+            {/* File Upload */}
+            <div className="space-y-2">
+              <label className="text-xs font-semibold text-slate-400 block">Upload Document to Workspace</label>
+              <div className="flex items-center gap-3">
+                <label className="cursor-pointer bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 text-xs py-2 px-4 rounded-lg flex items-center gap-2 transition-colors">
+                  <UploadCloud size={14} /> {uploading ? 'Uploading...' : 'Choose File'}
+                  <input type="file" className="hidden" onChange={handleFileUpload} disabled={uploading} />
+                </label>
+                {uploadStatus && (
+                  <span className="text-[10px] font-mono text-emerald-400 flex items-center gap-1">
+                    <FileText size={10} /> {uploadStatus}
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {/* Session Secrets */}
+            <div className="space-y-2">
+              <label className="text-xs font-semibold text-slate-400 block">Temporary Session Secrets (e.g. Passwords, API Keys)</label>
+              <textarea 
+                value={sessionContext}
+                onChange={(e) => setSessionContext(e.target.value)}
+                placeholder="Paste account credentials or context here. This is securely injected into the agent's memory for this run only."
+                rows={2}
+                className="w-full bg-slate-900 border border-slate-800 rounded p-2 text-xs font-mono focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500 text-slate-300"
+              />
+            </div>
+          </div>
+
           {/* Configuration profile snapshot */}
           <div className="rounded-xl border border-slate-900 bg-slate-950/20 p-6 space-y-4 text-xs">
             <h3 className="font-bold text-sm text-slate-300 border-b border-slate-900 pb-2">Active Parameters</h3>
@@ -169,24 +231,9 @@ export default function AgentConsolePage() {
 
               {/* Steps display */}
               <div className="space-y-6 max-h-[500px] overflow-y-auto pr-2">
-                {trace.steps.map((step: any) => (
-                  <div key={step.id} className="space-y-2 border-l-2 border-slate-800 pl-4 relative">
-                    <span className="absolute -left-1.5 top-1 w-3.5 h-3.5 rounded-full bg-slate-900 border-2 border-slate-700 flex items-center justify-center text-[8px] font-bold text-slate-400">
-                      {step.step_number}
-                    </span>
-                    
-                    <div className="flex justify-between items-center">
-                      <p className="text-xs font-bold uppercase tracking-wider text-slate-400">{step.action_type}</p>
-                      <span className="text-[10px] text-slate-600">
-                        {new Date(step.created_at).toLocaleTimeString()}
-                      </span>
-                    </div>
-
-                    <pre className="text-xs font-mono text-slate-300 whitespace-pre-wrap bg-slate-900/40 p-3 rounded border border-slate-900/50 leading-relaxed">
-                      {step.content}
-                    </pre>
-                  </div>
-                ))}
+                {trace.steps && trace.steps.length > 0 && (
+                  <TraceDiagram steps={trace.steps} />
+                )}
 
                 {/* Final response card */}
                 {result && (

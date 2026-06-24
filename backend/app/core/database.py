@@ -49,6 +49,7 @@ async def init_db():
             from app.workflows.models import Workflow, WorkflowRun, WorkflowStep
             from app.logs.models import AgentRun, AgentStep, LLMCall, ToolCall
             from app.memory.models import Memory
+            from app.tools.models import Tool
             
             logger.info("Creating all database tables...")
             await conn.run_sync(Base.metadata.create_all)

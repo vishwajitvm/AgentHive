@@ -1,7 +1,9 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, HTTPException, status, Query, UploadFile, File
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, delete
 from typing import List, Dict, Any, Optional
+import os
+import shutil
 from pydantic import BaseModel
 
 from app.core.database import get_db
@@ -235,7 +237,45 @@ async def get_run_status(run_id: int, db: AsyncSession = Depends(get_db)):
 async def get_run_steps(run_id: int, db: AsyncSession = Depends(get_db)):
     steps = await logs_service.get_agent_steps(run_id, db)
     tool_calls = await logs_service.get_tool_calls(run_id, db)
+    llm_calls = await logs_service.get_llm_calls(db, agent_run_id=run_id, limit=500)
+    
+    unified_steps = list(steps)
+    for call in llm_calls:
+        content = f"Provider: {call['provider']}\nModel: {call['model']}\nLatency: {call['latency_ms']}ms\nTokens: {call['prompt_tokens']} in / {call['completion_tokens']} out\nStatus: {call['status']}"
+        if call.get('failure_reason'):
+            content += f"\nFailure: {call['failure_reason']}"
+        if call.get('fallback_reason'):
+            content += f"\nFallback: {call['fallback_reason']}"
+            
+        unified_steps.append({
+            "id": f"llm_{call['id']}",
+            "step_number": "-", 
+            "action_type": "llm_call" if call['status'] == 'success' else "llm_error",
+            "content": content,
+            "created_at": call["created_at"],
+            "metadata": call
+        })
+        
+    # Sort chronologically
+    unified_steps.sort(key=lambda x: x["created_at"] if x["created_at"] else "")
+
     return {
-        "steps": steps,
+        "steps": unified_steps,
         "tool_calls": tool_calls
     }
+
+@router.post("/workspace/upload")
+async def upload_workspace_file(file: UploadFile = File(...)):
+    from app.tools.registry import WORKSPACE_DIR
+    try:
+        os.makedirs(WORKSPACE_DIR, exist_ok=True)
+        safe_name = os.path.basename(file.filename)
+        filepath = os.path.join(WORKSPACE_DIR, safe_name)
+        
+        with open(filepath, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+            
+        return {"success": True, "message": f"File '{safe_name}' uploaded successfully to workspace.", "filename": safe_name}
+    except Exception as e:
+        logger.exception("Failed to upload file to workspace", error=str(e))
+        raise HTTPException(status_code=500, detail=f"File upload failed: {str(e)}")
