@@ -188,7 +188,8 @@ class LLMRouter:
                     
                     logger.warn("LLM Attempt failed", provider=p_name, error=str(exc), latency_ms=latency_ms)
                     # Pause briefly before retry
-                    time.sleep(0.5)
+                    import asyncio
+                    await asyncio.sleep(0.5)
                     
         # All fallbacks failed
         logger.error("All providers in fallback chain failed", errors=str(last_error))

@@ -87,7 +87,7 @@ export async function uploadToWorkspace(file: File) {
   const formData = new FormData();
   formData.append('file', file);
   
-  const response = await fetch(`${API_URL}/api/agents/workspace/upload`, {
+  const response = await fetch(`${API_URL}/api/upload`, {
     method: 'POST',
     body: formData
   });

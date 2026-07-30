@@ -3,15 +3,15 @@ services:
     image: pgvector/pgvector:pg16
     container_name: agenthive-postgres
     environment:
-      POSTGRES_DB: ${POSTGRES_DB:-agenthive}
-      POSTGRES_USER: ${POSTGRES_USER:-agenthive}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-agenthive}
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-agenthive} -d ${POSTGRES_DB:-agenthive}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -34,8 +34,8 @@ services:
     container_name: agenthive-minio
     command: server /data --console-address ":9001"
     environment:
-      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY:-agenthive}
-      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY:-agenthive123}
+      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY}
     ports:
       - "9000:9000"
       - "9001:9001"

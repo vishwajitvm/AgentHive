@@ -312,6 +312,9 @@ class CodeTool(BaseTool):
             return "Error: expression is required."
 
         # Restrict environment to prevent unsafe operations (arbitrary execution)
+        if "__" in expression or "import " in expression or "eval(" in expression or "exec(" in expression:
+            return "Security Blocked: Unauthorized access to system internals or blocked keywords detected."
+
         safe_dict = {
             "abs": abs,
             "min": min,

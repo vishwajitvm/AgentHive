@@ -87,3 +87,20 @@ app.include_router(workflows_router, prefix="/api")
 app.include_router(logs_router, prefix="/api")
 app.include_router(settings_router, prefix="/api")
 app.include_router(tools_router, prefix="/api")
+
+try:
+    from app.api.routes.upload import router as upload_router
+    app.include_router(upload_router, prefix="/api")
+except ImportError:
+    logger.warning("Upload router not found.")
+
+try:
+    from prometheus_fastapi_instrumentator import Instrumentator
+    Instrumentator().instrument(app).expose(app)
+    logger.info("Prometheus metrics endpoint exposed at /metrics")
+except ImportError:
+    logger.warning("prometheus-fastapi-instrumentator not installed, /metrics will 404")
+
+@app.get("/")
+async def root():
+    return {"status": "ok", "service": "AgentHive API", "docs": "/docs"}

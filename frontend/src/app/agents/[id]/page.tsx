@@ -73,10 +73,17 @@ export default function AgentConsolePage() {
     setError('');
 
     try {
-      // Inject session context if present
-      const finalQuery = sessionContext.trim() 
-        ? `[SYSTEM SECRETS/CONTEXT FOR THIS SESSION]:\n${sessionContext}\n\n[USER INSTRUCTION]:\n${query}` 
-        : query;
+      // Inject session context and uploaded file context
+      let contextStr = "";
+      if (sessionContext.trim()) {
+          contextStr += `[SYSTEM SECRETS/CONTEXT FOR THIS SESSION]:\n${sessionContext}\n\n`;
+      }
+      if (uploadStatus && uploadStatus.startsWith("Uploaded:")) {
+          const filename = uploadStatus.replace("Uploaded: ", "");
+          contextStr += `[WORKSPACE FILES UPLOADED FOR THIS RUN]:\n- ${filename}\n\n`;
+      }
+      
+      const finalQuery = contextStr ? `${contextStr}[USER INSTRUCTION]:\n${query}` : query;
 
       const data = await runAgent(agentId, finalQuery, false);
       setResult(data);

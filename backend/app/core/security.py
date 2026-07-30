@@ -12,9 +12,9 @@ try:
     base64.urlsafe_b64decode(key_bytes)
     encryptor = Fernet(key_bytes)
 except Exception as e:
-    logger.error("Invalid ENCRYPTION_KEY configured. Fernet encryption will fail.", error=str(e))
-    # Fallback placeholder to prevent startup crashes in bad envs
-    encryptor = None
+    logger.error("Invalid ENCRYPTION_KEY configured. Failing fast to prevent insecure operation.", error=str(e))
+    import sys
+    sys.exit(1)
 
 def encrypt_secret(plain_text: str) -> str:
     """Encrypts a plaintext string into a secure ciphertext string."""

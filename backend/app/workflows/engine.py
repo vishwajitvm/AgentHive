@@ -146,9 +146,9 @@ class WorkflowExecutor:
                             val = d_out.get("output", "")
                             resolved_input = resolved_input.replace(f"{{{d_id}.output}}", str(val))
                         
-                        # Fallback to run input if variables not specified
-                        if resolved_input == input_tmpl:
-                            resolved_input = resolved_input.format(input=run.input_data.get("query", ""))
+                        # Always replace `{input}` fallback to root input query
+                        root_query = str(run.input_data.get("query", ""))
+                        resolved_input = resolved_input.replace("{input}", root_query)
                             
                         step.input_data = {"resolved_query": resolved_input}
                         await db.commit()
