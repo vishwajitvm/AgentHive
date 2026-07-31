@@ -29,9 +29,11 @@ graph TD
     classDef db fill:#f59e0b,stroke:#b45309,stroke-width:2px,color:#fff
     classDef ai fill:#8b5cf6,stroke:#6d28d9,stroke-width:2px,color:#fff
     classDef obs fill:#f97316,stroke:#c2410c,stroke-width:2px,color:#fff
+    classDef auth fill:#e11d48,stroke:#be123c,stroke-width:2px,color:#fff
 
     User(("User"))
     UI["Frontend UI (Next.js :3000)"]:::frontend
+    Keycloak["Keycloak OIDC (:8080)"]:::auth
     API["Backend API (FastAPI :8000)"]:::backend
     Worker["Celery Worker"]:::backend
     
@@ -46,12 +48,16 @@ graph TD
     Loki["Loki (:3100)"]:::obs
 
     User -- "Clicks UI" --> UI
-    UI -- "REST API" --> API
+    UI -- "Authenticates" --> Keycloak
+    Keycloak -- "Issues JWT" --> UI
+    UI -- "REST API (Bearer JWT)" --> API
+    API -- "Validates JWT" --> Keycloak
     API -- "Queues Task" --> Redis
     Redis -- "Picks up Task" --> Worker
     
     API -- "Reads/Writes" --> Postgres
     Worker -- "Reads/Writes" --> Postgres
+    Keycloak -- "Stores Users" --> Postgres
     
     API -- "Uploads Files" --> MinIO
     Worker -- "Reads Files" --> MinIO

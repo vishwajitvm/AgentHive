@@ -17,3 +17,13 @@ cryptography
 pgvector
 youtube-transcript-api
 prometheus-fastapi-instrumentator
+email-validator
+tracenest==0.1.15
+asyncpg
+beautifulsoup4
+pymupdf
+pandas
+passlib[bcrypt]
+bcrypt
+PyJWT
+pyotp

@@ -14,6 +14,7 @@ from app.api.routes.workflows import router as workflows_router
 from app.api.routes.logs import router as logs_router
 from app.api.routes.settings import router as settings_router
 from app.api.routes.tools import router as tools_router
+from app.api.routes.auth import router as auth_router
 
 import time
 import uuid
@@ -44,9 +45,9 @@ async def startup_event():
     async with AsyncSessionLocal() as db:
         from app.tools.seeder import seed_tools
         await seed_tools(db)
-        await initialize_agents(db)
-        from app.agents.seeder import seed_new_agents
-        await seed_new_agents(db)
+        # await initialize_agents(db)
+        # from app.agents.seeder import seed_new_agents
+        # await seed_new_agents(db)
         
     logger.info("AgentHive API service has successfully started.")
 
@@ -87,6 +88,7 @@ app.include_router(workflows_router, prefix="/api")
 app.include_router(logs_router, prefix="/api")
 app.include_router(settings_router, prefix="/api")
 app.include_router(tools_router, prefix="/api")
+app.include_router(auth_router, prefix="/api/auth")
 
 try:
     from app.api.routes.upload import router as upload_router

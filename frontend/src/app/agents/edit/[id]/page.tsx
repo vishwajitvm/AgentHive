@@ -1,22 +1,24 @@
 'use client';
 
-import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { createAgent } from '../../../lib/api';
+import React, { useState, useEffect } from 'react';
+import { useRouter, useParams } from 'next/navigation';
+import { getAgent, updateAgent } from '../../../../lib/api';
 import { Bot, Save, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 
-export default function CreateAgentPage() {
+export default function EditAgentPage() {
   const router = useRouter();
-  const [loading, setLoading] = useState(false);
+  const params = useParams();
+  const agentId = Number(params.id);
+  
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
   const [form, setForm] = useState({
     name: '',
-    slug: '',
     description: '',
     how_to_use: '',
-    agent_type: 'personal_assistant',
     prompt_content: '',
     tools_enabled: [] as string[],
     memory_enabled: true,
@@ -31,7 +33,33 @@ export default function CreateAgentPage() {
     { slug: 'search_tool', name: 'Web Search Engine', desc: 'Searches the web for articles and snippets.' },
     { slug: 'storage_tool', name: 'MinIO Cloud Storage', desc: 'Uploads or downloads objects from S3 bucket.' },
     { slug: 'code_tool', name: 'Code Interpreter', desc: 'Safe evaluation of simple Python arithmetic and blocks.' },
+    { slug: 'youtube_transcript_tool', name: 'YouTube Transcript Tool', desc: 'Extracts transcripts from YouTube videos.' },
   ];
+
+  useEffect(() => {
+    if (!agentId) return;
+    const fetchAgent = async () => {
+      try {
+        const agent = await getAgent(agentId);
+        setForm({
+          name: agent.name || '',
+          description: agent.description || '',
+          how_to_use: agent.how_to_use || '',
+          prompt_content: agent.prompt_content || '',
+          tools_enabled: agent.tools_enabled || [],
+          memory_enabled: agent.memory_enabled !== false,
+          allow_uploads: agent.allow_uploads === true,
+          max_steps: agent.max_steps || 10,
+          timeout_seconds: agent.timeout_seconds || 120
+        });
+      } catch (err: any) {
+        setError('Failed to load agent details.');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchAgent();
+  }, [agentId]);
 
   const handleToolToggle = (slug: string) => {
     setForm(prev => {
@@ -39,7 +67,7 @@ export default function CreateAgentPage() {
       return {
         ...prev,
         tools_enabled: exists 
-          ? prev.tools_enabled.filter(t => t !== slug)
+          ? prev.tools_enabled.filter((t: string) => t !== slug)
           : [...prev.tools_enabled, slug]
       };
     });
@@ -47,23 +75,27 @@ export default function CreateAgentPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.name || !form.slug || !form.prompt_content) {
-      setError('Please fill in Name, Slug, and System Prompt fields.');
+    if (!form.name || !form.prompt_content) {
+      setError('Please fill in Name and System Prompt fields.');
       return;
     }
     
-    setLoading(true);
+    setSaving(true);
     setError('');
 
     try {
-      await createAgent(form);
+      await updateAgent(agentId, form);
       router.push('/agents');
     } catch (err: any) {
-      setError(err.message || 'Failed to create agent.');
+      setError(err.message || 'Failed to update agent.');
     } finally {
-      setLoading(false);
+      setSaving(false);
     }
   };
+
+  if (loading) {
+    return <div className="text-center py-10 text-slate-400">Loading agent...</div>;
+  }
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
@@ -74,8 +106,8 @@ export default function CreateAgentPage() {
 
       {/* Header */}
       <div>
-        <h2 className="text-3xl font-extrabold tracking-tight">Create AI Agent Profile</h2>
-        <p className="text-slate-400 text-sm mt-1">Configure reasoning prompts and security execution parameters.</p>
+        <h2 className="text-3xl font-extrabold tracking-tight">Edit Agent: {form.name}</h2>
+        <p className="text-slate-400 text-sm mt-1">Update reasoning prompts and security execution parameters.</p>
       </div>
 
       {error && (
@@ -92,28 +124,15 @@ export default function CreateAgentPage() {
           <div className="rounded-xl border border-slate-900 bg-slate-950/40 p-6 space-y-4">
             <h3 className="font-bold text-base border-b border-slate-900 pb-3">Agent Metadata</h3>
             
-            <div className="grid md:grid-cols-2 gap-4">
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Name</label>
-                <input 
-                  type="text" 
-                  value={form.name} 
-                  onChange={(e) => setForm({...form, name: e.target.value})}
-                  placeholder="e.g. Code Helper Agent"
-                  className="w-full bg-slate-900 border border-slate-800 rounded px-3 py-2 text-sm focus:outline-none focus:border-emerald-500"
-                />
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Unique Slug</label>
-                <input 
-                  type="text" 
-                  value={form.slug} 
-                  onChange={(e) => setForm({...form, slug: e.target.value.toLowerCase().replace(/[^a-z0-9_-]/g, '')})}
-                  placeholder="e.g. code_helper"
-                  className="w-full bg-slate-900 border border-slate-800 rounded px-3 py-2 text-sm focus:outline-none focus:border-emerald-500"
-                />
-              </div>
+            <div className="space-y-1">
+              <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Name</label>
+              <input 
+                type="text" 
+                value={form.name} 
+                onChange={(e) => setForm({...form, name: e.target.value})}
+                placeholder="e.g. Code Helper Agent"
+                className="w-full bg-slate-900 border border-slate-800 rounded px-3 py-2 text-sm focus:outline-none focus:border-emerald-500"
+              />
             </div>
 
             <div className="space-y-1">
@@ -136,21 +155,6 @@ export default function CreateAgentPage() {
                 rows={3}
                 className="w-full bg-slate-900 border border-slate-800 rounded px-3 py-2 text-sm focus:outline-none focus:border-emerald-500"
               />
-            </div>
-            
-            <div className="space-y-1">
-              <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Agent Type</label>
-              <select 
-                value={form.agent_type}
-                onChange={(e) => setForm({...form, agent_type: e.target.value})}
-                className="w-full bg-slate-900 border border-slate-800 rounded px-3 py-2 text-sm focus:outline-none focus:border-emerald-500"
-              >
-                <option value="personal_assistant">Personal Assistant</option>
-                <option value="task_agent">Task Agent</option>
-                <option value="pdf_agent">PDF Document Agent</option>
-                <option value="research_agent">Research Analyst Agent</option>
-                <option value="developer_agent">Developer Agent</option>
-              </select>
             </div>
           </div>
 
@@ -246,10 +250,10 @@ export default function CreateAgentPage() {
           {/* Submit */}
           <button 
             type="submit" 
-            disabled={loading}
+            disabled={saving}
             className="w-full py-3 rounded-lg bg-emerald-500 hover:bg-emerald-400 disabled:bg-slate-800 disabled:text-slate-600 text-slate-950 font-bold text-sm flex items-center justify-center gap-2 transition-all shadow-lg shadow-emerald-500/10"
           >
-            <Save size={16} /> {loading ? 'Saving Agent...' : 'Save Agent'}
+            <Save size={16} /> {saving ? 'Saving...' : 'Save Changes'}
           </button>
         </div>
       </form>

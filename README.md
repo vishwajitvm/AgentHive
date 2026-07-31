@@ -23,6 +23,7 @@ The platform is designed for users who want to run many agent bots together, swi
 |---|---|---|
 | Frontend | Next.js + React + Tailwind CSS | Professional dashboard, routing, components, fast development |
 | Backend | Python FastAPI | Fast APIs, async support, agent orchestration, clean docs |
+| Identity & Auth | Keycloak OIDC | Enterprise-grade OAuth2/OpenID Connect provider |
 | Database | PostgreSQL | Reliable relational data for agents, users, logs, workflows |
 | Vector Memory | pgvector | Free vector memory inside PostgreSQL |
 | Queue/Cache | Redis | Celery queue, cache, rate limits, temporary state |
@@ -42,6 +43,7 @@ The platform is designed for users who want to run many agent bots together, swi
 ```text
 User Dashboard
   -> Nginx
+  -> Keycloak OIDC (Authentication)
   -> FastAPI Backend
   -> Agent Orchestrator
   -> Agent Registry

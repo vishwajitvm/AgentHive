@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query, UploadFile, File
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, delete
+from sqlalchemy import select, delete, func
 from typing import List, Dict, Any, Optional
 import os
 import shutil
@@ -21,32 +21,56 @@ class AgentCreate(BaseModel):
     name: str
     slug: str
     description: Optional[str] = None
+    how_to_use: Optional[str] = None
     agent_type: str
     prompt_content: str
     tools_enabled: List[str] = []
     memory_enabled: bool = True
+    allow_uploads: bool = False
     max_steps: int = 10
     timeout_seconds: int = 120
     model_policy_id: Optional[int] = None
+    order_index: int = 0
 
 class AgentUpdate(BaseModel):
     name: Optional[str] = None
     description: Optional[str] = None
+    how_to_use: Optional[str] = None
     prompt_content: Optional[str] = None
     tools_enabled: Optional[List[str]] = None
     memory_enabled: Optional[bool] = None
+    allow_uploads: Optional[bool] = None
     max_steps: Optional[int] = None
     timeout_seconds: Optional[int] = None
     model_policy_id: Optional[int] = None
     status: Optional[str] = None
+    order_index: Optional[int] = None
+
+class AgentReorderItem(BaseModel):
+    id: int
+    order_index: int
+
+class AgentReorderPayload(BaseModel):
+    agents: List[AgentReorderItem]
 
 class RunPayload(BaseModel):
     query: str
 
 @router.get("")
 async def list_agents(db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(Agent).order_by(Agent.name))
+    result = await db.execute(select(Agent).order_by(Agent.order_index.asc(), Agent.created_at.desc()))
     return result.scalars().all()
+
+@router.post("/reorder")
+async def reorder_agents(payload: AgentReorderPayload, db: AsyncSession = Depends(get_db)):
+    for item in payload.agents:
+        await db.execute(
+            Agent.__table__.update()
+            .where(Agent.id == item.id)
+            .values(order_index=item.order_index)
+        )
+    await db.commit()
+    return {"success": True}
 
 @router.post("", status_code=status.HTTP_201_CREATED)
 async def create_agent(payload: AgentCreate, db: AsyncSession = Depends(get_db)):
@@ -56,6 +80,11 @@ async def create_agent(payload: AgentCreate, db: AsyncSession = Depends(get_db))
         raise HTTPException(status_code=400, detail=f"Agent with slug '{payload.slug}' already exists.")
 
     try:
+        # Get min order_index so new agent appears at top
+        min_order_res = await db.execute(select(func.min(Agent.order_index)))
+        min_order = min_order_res.scalar() or 0
+        new_order = min_order - 1
+
         # 1. Create Prompt
         prompt = Prompt(
             name=f"{payload.name} Prompt",
@@ -81,15 +110,18 @@ async def create_agent(payload: AgentCreate, db: AsyncSession = Depends(get_db))
             name=payload.name,
             slug=payload.slug,
             description=payload.description,
+            how_to_use=payload.how_to_use,
             agent_type=payload.agent_type,
             prompt_id=prompt.id,
             prompt_version_id=prompt_ver.id,
             tools_enabled=payload.tools_enabled,
             memory_enabled=payload.memory_enabled,
+            allow_uploads=payload.allow_uploads,
             max_steps=payload.max_steps,
             timeout_seconds=payload.timeout_seconds,
             status="active",
-            model_policy_id=payload.model_policy_id
+            model_policy_id=payload.model_policy_id,
+            order_index=new_order
         )
         db.add(agent)
         await db.commit()

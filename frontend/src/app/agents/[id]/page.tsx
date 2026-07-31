@@ -117,7 +117,16 @@ export default function AgentConsolePage() {
           </div>
           <div>
             <h2 className="text-2xl font-bold">{agent?.name}</h2>
-            <p className="text-slate-400 text-xs mt-0.5 capitalize">{agent?.agent_type.replace('_', ' ')} Registry Profile</p>
+            <p className="text-slate-400 text-xs mt-0.5 capitalize mb-2">{agent?.agent_type.replace('_', ' ')} Registry Profile</p>
+            {agent?.description && (
+              <p className="text-slate-300 text-sm max-w-2xl">{agent.description}</p>
+            )}
+            {agent?.how_to_use && (
+              <div className="mt-2 text-slate-400 text-xs">
+                <span className="font-semibold text-slate-300">How to use:</span>
+                <p className="whitespace-pre-wrap">{agent.how_to_use}</p>
+              </div>
+            )}
           </div>
         </div>
 
@@ -142,13 +151,34 @@ export default function AgentConsolePage() {
             </h3>
             
             <form onSubmit={handleRun} className="space-y-4">
+              {/* Context & File Upload Inline */}
+              <div className="pt-2 border-t border-slate-900">
+                {/* File Upload */}
+                {agent?.allow_uploads && (
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-semibold text-slate-400 block uppercase tracking-wider">Workspace Upload</label>
+                    <div className="flex flex-col gap-2">
+                      <label className="cursor-pointer bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 text-xs py-2 px-4 rounded flex items-center justify-center gap-2 transition-colors">
+                        <UploadCloud size={14} /> {uploading ? 'Uploading...' : 'Upload Document'}
+                        <input type="file" className="hidden" onChange={handleFileUpload} disabled={uploading} />
+                      </label>
+                      {uploadStatus && (
+                        <span className="text-[10px] font-mono text-emerald-400 flex items-center gap-1">
+                          <FileText size={10} /> {uploadStatus}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+
               <textarea 
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Instruct the agent (e.g. 'Search for recent facts about FastAPI and summarize them in a markdown file called fastapi.md')"
                 rows={4}
                 disabled={running}
-                className="w-full bg-slate-900 border border-slate-800 rounded p-3 text-sm focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+                className="w-full bg-slate-900 border border-slate-800 rounded p-3 text-sm focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 mt-2"
               />
 
               <button 
@@ -159,41 +189,6 @@ export default function AgentConsolePage() {
                 <Play size={14} fill="currentColor" /> {running ? 'Running Agent Loop...' : 'Execute Loop'}
               </button>
             </form>
-          </div>
-
-          {/* Context & File Upload */}
-          <div className="rounded-xl border border-slate-900 bg-slate-950/20 p-6 space-y-5">
-            <h3 className="font-bold text-sm flex items-center gap-2 text-slate-300 border-b border-slate-900 pb-2">
-              <Shield size={16} className="text-sky-400" /> Workspace Context & Secrets
-            </h3>
-            
-            {/* File Upload */}
-            <div className="space-y-2">
-              <label className="text-xs font-semibold text-slate-400 block">Upload Document to Workspace</label>
-              <div className="flex items-center gap-3">
-                <label className="cursor-pointer bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 text-xs py-2 px-4 rounded-lg flex items-center gap-2 transition-colors">
-                  <UploadCloud size={14} /> {uploading ? 'Uploading...' : 'Choose File'}
-                  <input type="file" className="hidden" onChange={handleFileUpload} disabled={uploading} />
-                </label>
-                {uploadStatus && (
-                  <span className="text-[10px] font-mono text-emerald-400 flex items-center gap-1">
-                    <FileText size={10} /> {uploadStatus}
-                  </span>
-                )}
-              </div>
-            </div>
-
-            {/* Session Secrets */}
-            <div className="space-y-2">
-              <label className="text-xs font-semibold text-slate-400 block">Temporary Session Secrets (e.g. Passwords, API Keys)</label>
-              <textarea 
-                value={sessionContext}
-                onChange={(e) => setSessionContext(e.target.value)}
-                placeholder="Paste account credentials or context here. This is securely injected into the agent's memory for this run only."
-                rows={2}
-                className="w-full bg-slate-900 border border-slate-800 rounded p-2 text-xs font-mono focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500 text-slate-300"
-              />
-            </div>
           </div>
 
           {/* Configuration profile snapshot */}

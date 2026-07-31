@@ -67,6 +67,18 @@ export async function updateAgent(id: number, payload: any) {
   return response.json();
 }
 
+export async function reorderAgents(agents: {id: number, order_index: number}[]) {
+  const response = await fetch(`${API_URL}/api/agents/reorder`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ agents })
+  });
+  if (!response.ok) {
+    const err = await response.json();
+    throw new Error(err.detail || 'Failed to reorder agents');
+  }
+}
+
 export async function deleteAgent(id: number) {
   const response = await fetch(`${API_URL}/api/agents/${id}`, { method: 'DELETE' });
   if (!response.ok) throw new Error('Failed to delete agent');

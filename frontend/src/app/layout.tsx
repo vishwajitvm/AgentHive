@@ -56,6 +56,20 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     { name: 'Monitoring', path: '/monitoring', icon: Activity },
   ];
 
+  const isAuthPage = pathname === '/login' || pathname === '/signup' || pathname === '/verify';
+
+  if (isAuthPage) {
+    return (
+      <html lang="en">
+        <body className="bg-slate-950 text-slate-100 flex min-h-screen">
+          <main className="flex-1 overflow-y-auto bg-gradient-to-br from-slate-950 to-slate-900">
+            {children}
+          </main>
+        </body>
+      </html>
+    );
+  }
+
   return (
     <html lang="en">
       <body className="bg-slate-950 text-slate-100 flex min-h-screen">
