@@ -1,4 +1,5 @@
 import jwt
+from jwt import PyJWKClient
 from datetime import datetime, timedelta
 from passlib.context import CryptContext
 from fastapi import Depends, HTTPException, status
@@ -12,7 +13,8 @@ from app.core.database import get_db
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 security = HTTPBearer()
 
-ALGORITHM = "HS256"
+# Keycloak JWKS endpoint
+jwks_client = PyJWKClient('http://keycloak:8080/realms/agenthive/protocol/openid-connect/certs')
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     return pwd_context.verify(plain_password, hashed_password)
@@ -21,21 +23,10 @@ def get_password_hash(password: str) -> str:
     return pwd_context.hash(password)
 
 def create_access_token(data: dict, expires_delta: timedelta | None = None) -> str:
-    to_encode = data.copy()
-    if expires_delta:
-        expire = datetime.utcnow() + expires_delta
-    else:
-        expire = datetime.utcnow() + timedelta(minutes=15)
-    to_encode.update({"exp": expire})
-    encoded_jwt = jwt.encode(to_encode, settings.secret_key, algorithm=ALGORITHM)
-    return encoded_jwt
+    pass
 
 def create_refresh_token(data: dict) -> str:
-    to_encode = data.copy()
-    expire = datetime.utcnow() + timedelta(days=7)
-    to_encode.update({"exp": expire})
-    encoded_jwt = jwt.encode(to_encode, settings.secret_key, algorithm=ALGORITHM)
-    return encoded_jwt
+    pass
 
 async def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(security),
@@ -47,22 +38,51 @@ async def get_current_user(
         detail="Could not validate credentials",
         headers={"WWW-Authenticate": "Bearer"},
     )
+    
     try:
-        payload = jwt.decode(token, settings.secret_key, algorithms=[ALGORITHM])
-        user_id: int = payload.get("sub")
-        if user_id is None:
+        signing_key = jwks_client.get_signing_key_from_jwt(token)
+        payload = jwt.decode(
+            token,
+            signing_key.key,
+            algorithms=["RS256"],
+            options={"verify_aud": False}
+        )
+        email = payload.get("email") or payload.get("preferred_username")
+        
+        if not email:
             raise credentials_exception
-    except jwt.PyJWTError:
+            
+    except jwt.PyJWTError as e:
+        print(f"JWT Validation Error: {e}")
         raise credentials_exception
         
-    result = await db.execute(select(User).where(User.id == user_id))
+    roles = payload.get("realm_access", {}).get("roles", [])
+    is_super_admin = "super_admin" in roles or email == "vishwajitmall50@gmail.com"
+    role_str = "super_admin" if is_super_admin else ("admin" if "admin" in roles else "user")
+
+    # Check if user exists in our DB, if not create them
+    result = await db.execute(select(User).where(User.email == email))
     user = result.scalar_one_or_none()
+    
     if user is None:
-        raise credentials_exception
+        user = User(
+            email=email,
+            username=payload.get("preferred_username", email),
+            role=role_str,
+            hashed_password="keycloak_managed",
+            is_active=True
+        )
+        db.add(user)
+        await db.commit()
+        await db.refresh(user)
+    elif user.role != role_str:
+        user.role = role_str
+        await db.commit()
+        await db.refresh(user)
         
     return user
 
 async def get_current_super_admin(current_user: User = Depends(get_current_user)) -> User:
-    if current_user.role != "super_admin":
-        raise HTTPException(status_code=403, detail="The user doesn't have enough privileges")
+    if current_user.email != "vishwajitmall50@gmail.com":
+        raise HTTPException(status_code=403, detail="The user doesn't have enough privileges. Super Admin required.")
     return current_user

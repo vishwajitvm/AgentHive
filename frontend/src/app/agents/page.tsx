@@ -59,8 +59,27 @@ export default function AgentsListPage() {
     }
   };
 
+  const [isAdmin, setIsAdmin] = useState(false);
+
   useEffect(() => {
     fetchAgents();
+    
+    // Check admin status from JWT
+    const token = document.cookie
+      .split('; ')
+      .find(row => row.startsWith('agenthive_token='))
+      ?.split('=')[1];
+      
+    if (token) {
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        if (payload.email === 'vishwajitmall50@gmail.com') {
+          setIsAdmin(true);
+        }
+      } catch (e) {
+        console.error('Failed to parse token');
+      }
+    }
   }, []);
 
   const handleDragEnd = async (event: any) => {
@@ -111,9 +130,11 @@ export default function AgentsListPage() {
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full md:w-64 bg-slate-900 border border-slate-800 text-slate-200 text-sm rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
           />
-          <Link href="/agents/create" className="whitespace-nowrap px-4 py-2.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-sm flex items-center gap-2 transition-all shadow-lg shadow-emerald-500/10">
-            <Plus size={16} /> Create New Agent
-          </Link>
+          {isAdmin && (
+            <Link href="/agents/create" className="whitespace-nowrap px-4 py-2.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-sm flex items-center gap-2 transition-all shadow-lg shadow-emerald-500/10">
+              <Plus size={16} /> Create New Agent
+            </Link>
+          )}
         </div>
       </div>
 

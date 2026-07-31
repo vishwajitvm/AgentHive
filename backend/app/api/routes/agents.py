@@ -28,7 +28,7 @@ class AgentCreate(BaseModel):
     memory_enabled: bool = True
     allow_uploads: bool = False
     max_steps: int = 10
-    timeout_seconds: int = 120
+    timeout_seconds: int = 600
     model_policy_id: Optional[int] = None
     order_index: int = 0
 
@@ -72,8 +72,10 @@ async def reorder_agents(payload: AgentReorderPayload, db: AsyncSession = Depend
     await db.commit()
     return {"success": True}
 
+from app.core.auth import get_current_super_admin, get_current_user
+
 @router.post("", status_code=status.HTTP_201_CREATED)
-async def create_agent(payload: AgentCreate, db: AsyncSession = Depends(get_db)):
+async def create_agent(payload: AgentCreate, db: AsyncSession = Depends(get_db), current_user = Depends(get_current_super_admin)):
     # Check if slug exists
     slug_res = await db.execute(select(Agent).where(Agent.slug == payload.slug))
     if slug_res.scalar_one_or_none():

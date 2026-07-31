@@ -109,6 +109,12 @@ class AgentOrchestrator:
             agent_run.status = "failed"
             agent_run.output_response = f"Execution Error: {str(e)}"
             await db.commit()
-            raise
+            return {
+                "agent_run_id": agent_run.id,
+                "status": "failed",
+                "output": agent_run.output_response,
+                "steps_count": 0,
+                "elapsed_seconds": 0
+            }
 
 orchestrator = AgentOrchestrator()

@@ -101,6 +101,8 @@ services:
     command: start-dev
     ports:
       - "8080:8080"
+    volumes:
+      - ./keycloak-theme:/opt/keycloak/themes
     depends_on:
       - postgres
 

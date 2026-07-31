@@ -26,10 +26,10 @@ async def get_env_settings(db: AsyncSession = Depends(get_db)):
     
     # Mask values
     environment_variables = {
-        "GEMINI_API_KEY": "****" if "gemini_api_key" in secrets_list or settings.gemini_api_key else "",
-        "OPENAI_API_KEY": "****" if "openai_api_key" in secrets_list or settings.openai_api_key else "",
-        "HUGGINGFACE_API_KEY": "****" if "huggingface_api_key" in secrets_list or settings.huggingface_api_key else "",
-        "GROQ_API_KEY": "****" if "groq_api_key" in secrets_list or settings.groq_api_key else "",
+        "GEMINI_API_KEY": "****" if "gemini_api_key" in secrets_list or getattr(settings, "gemini_api_key", None) else "",
+        "OPENAI_API_KEY": "****" if "openai_api_key" in secrets_list or getattr(settings, "openai_api_key", None) else "",
+        "HUGGINGFACE_API_KEY": "****" if "huggingface_api_key" in secrets_list or getattr(settings, "huggingface_api_key", None) else "",
+        "GROQ_API_KEY": "****" if "groq_api_key" in secrets_list or getattr(settings, "groq_api_key", None) else "",
         "OLLAMA_BASE_URL": settings.ollama_base_url,
         "DEFAULT_PRIMARY_PROVIDER": settings.default_primary_provider,
         "DEFAULT_SECONDARY_PROVIDER": settings.default_secondary_provider,

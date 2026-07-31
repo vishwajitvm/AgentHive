@@ -32,7 +32,7 @@ class Settings(BaseSettings):
     default_fallback_order: str = "gemini,ollama,huggingface,groq,openai"
     default_max_input_tokens: int = 12000
     default_max_output_tokens: int = 2048
-    default_llm_timeout_seconds: int = 60
+    default_llm_timeout_seconds: int = 300
     
     # Logging
     log_level: str = "INFO"

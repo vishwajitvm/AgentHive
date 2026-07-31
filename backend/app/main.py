@@ -18,11 +18,16 @@ from app.api.routes.auth import router as auth_router
 
 import time
 import uuid
+from tracenest.fastapi.middleware import TraceNestMiddleware
+from tracenest.ui.router import router as tracenest_router
 
 configure_logging()
 logger = get_logger(__name__)
 
 app = FastAPI(title="AgentHive API", version="0.1.0")
+
+# Add Tracenest middleware for comprehensive API logging
+app.add_middleware(TraceNestMiddleware)
 
 app.add_middleware(
     CORSMiddleware,
@@ -89,6 +94,9 @@ app.include_router(logs_router, prefix="/api")
 app.include_router(settings_router, prefix="/api")
 app.include_router(tools_router, prefix="/api")
 app.include_router(auth_router, prefix="/api/auth")
+
+# Tracenest UI Router
+app.include_router(tracenest_router, prefix="/tracenest", tags=["tracenest"])
 
 try:
     from app.api.routes.upload import router as upload_router

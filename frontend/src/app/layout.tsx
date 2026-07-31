@@ -13,7 +13,9 @@ import {
   Heart,
   ChevronLeft,
   ChevronRight,
-  Wrench
+  Wrench,
+  LogOut,
+  UserCircle
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -45,16 +47,63 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     return () => clearInterval(interval);
   }, []);
 
-  const navItems = [
-    { name: 'Dashboard', path: '/', icon: LayoutDashboard },
-    { name: 'Agents', path: '/agents', icon: Bot },
-    { name: 'Tools Directory', path: '/tools', icon: Wrench },
-    { name: 'Models & Policies', path: '/models', icon: Sliders },
-    { name: 'Workflows', path: '/workflows', icon: Workflow },
-    { name: 'Activity Logs', path: '/logs', icon: Terminal },
-    { name: 'Secrets Manager', path: '/env', icon: Key },
-    { name: 'Monitoring', path: '/monitoring', icon: Activity },
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [userProfile, setUserProfile] = useState<{name: string, email: string} | null>(null);
+  
+  // Check admin status from JWT
+  useEffect(() => {
+    const token = document.cookie
+      .split('; ')
+      .find(row => row.startsWith('agenthive_token='))
+      ?.split('=')[1];
+      
+    if (token) {
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        const roles = payload.realm_access?.roles || [];
+        if (roles.includes('super_admin') || roles.includes('admin') || payload.email === 'vishwajitmall50@gmail.com') {
+          setIsAdmin(true);
+        }
+        setUserProfile({
+          name: payload.name || payload.preferred_username || payload.email?.split('@')[0] || 'User',
+          email: payload.email || ''
+        });
+      } catch (e) {
+        console.error('Failed to parse token');
+      }
+    }
+  }, [pathname]);
+
+  const handleLogout = () => {
+    // Read the id_token for seamless Keycloak logout
+    const idToken = document.cookie
+      .split('; ')
+      .find(row => row.startsWith('agenthive_id_token='))
+      ?.split('=')[1];
+
+    document.cookie = "agenthive_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+    document.cookie = "agenthive_id_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+    
+    let logoutUrl = "http://localhost:8080/realms/agenthive/protocol/openid-connect/logout?client_id=agenthive-frontend&post_logout_redirect_uri=" + encodeURIComponent("http://localhost:3000/login");
+    if (idToken) {
+      logoutUrl += "&id_token_hint=" + idToken;
+    }
+    
+    window.location.href = logoutUrl;
+  };
+
+  const allNavItems = [
+    { name: 'Dashboard', path: '/', icon: LayoutDashboard, adminOnly: false },
+    { name: 'Agents', path: '/agents', icon: Bot, adminOnly: false },
+    { name: 'Tools Directory', path: '/tools', icon: Wrench, adminOnly: false },
+    { name: 'Models & Policies', path: '/models', icon: Sliders, adminOnly: false },
+    { name: 'Workflows', path: '/workflows', icon: Workflow, adminOnly: false },
+    { name: 'Activity Logs', path: '/logs', icon: Terminal, adminOnly: false },
+    { name: 'Secrets Manager', path: '/env', icon: Key, adminOnly: true },
+    { name: 'Monitoring', path: '/monitoring', icon: Activity, adminOnly: true },
   ];
+
+  const navItems = allNavItems.filter(item => !item.adminOnly || isAdmin);
 
   const isAuthPage = pathname === '/login' || pathname === '/signup' || pathname === '/verify';
 
@@ -143,7 +192,25 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             </div>
             
             <div className="flex items-center gap-4">
-              <span className="text-xs px-3 py-1 rounded-full bg-slate-900 border border-slate-800 text-slate-400">
+              {userProfile && (
+                <div className="flex items-center gap-3 mr-4 pl-4 border-l border-slate-800">
+                  <div className="bg-slate-800 p-1.5 rounded-full border border-slate-700">
+                    <UserCircle size={22} className="text-emerald-400" />
+                  </div>
+                  <div className="flex flex-col hidden sm:flex">
+                    <span className="text-sm font-bold text-slate-200 leading-tight">{userProfile.name}</span>
+                    <span className="text-[10px] text-slate-500">{userProfile.email}</span>
+                  </div>
+                  <button 
+                    onClick={handleLogout}
+                    className="ml-2 p-2 text-slate-400 hover:text-rose-400 hover:bg-slate-900 rounded-lg transition-colors"
+                    title="Logout"
+                  >
+                    <LogOut size={18} />
+                  </button>
+                </div>
+              )}
+              <span className="text-xs px-3 py-1 rounded-full bg-slate-900 border border-slate-800 text-slate-400 hidden md:inline-block">
                 Single-User Dev Session
               </span>
             </div>
