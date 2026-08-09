@@ -24,15 +24,29 @@ class Settings(BaseSettings):
     
     # Ollama
     ollama_base_url: str = "http://ollama:11434"
-    ollama_default_model: str = "llama3"
+    ollama_default_model: str = "llama3.2:1b"
+    
+    # LLM Providers
+    gemini_api_key: str = ""
+    openai_api_key: str = ""
+    huggingface_api_key: str = ""
+    groq_api_key: str = ""
+    custom_llm_base_url: str = ""
+    custom_llm_api_key: str = ""
     
     # Default Model Policy
     default_primary_provider: str = "gemini"
-    default_secondary_provider: str = "ollama"
-    default_fallback_order: str = "gemini,ollama,huggingface,groq,openai"
+    default_secondary_provider: str = "nvidia"
+    default_fallback_order: str = "gemini,nvidia,huggingface,groq,openai,ollama"
     default_max_input_tokens: int = 12000
     default_max_output_tokens: int = 2048
     default_llm_timeout_seconds: int = 300
+
+    # Multi-Agent & Speculative LLM Racing Settings
+    default_orchestration_pattern: str = "router"
+    parallel_llm_racing_enabled: bool = True
+    parallel_llm_timeout_seconds: float = 30.0
+    parallel_llm_default_providers: str = "nvidia,gemini,groq"
     
     # Logging
     log_level: str = "INFO"
@@ -53,5 +67,7 @@ class Settings(BaseSettings):
     class Config:
         env_file = ".env"
         case_sensitive = False
+        extra = "ignore"
+
 
 settings = Settings()

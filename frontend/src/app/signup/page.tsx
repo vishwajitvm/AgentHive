@@ -45,16 +45,11 @@ export default function SignupPage() {
   };
 
   const handleGoogleAuth = () => {
-    const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
-    if (!clientId || clientId === 'YOUR_GOOGLE_CLIENT_ID') {
-      setError('Google OAuth is not configured. Please add NEXT_PUBLIC_GOOGLE_CLIENT_ID to your frontend .env file.');
-      return;
-    }
-    const redirectUri = 'http://localhost:8000/api/auth/google/callback';
-    const scope = 'openid email profile';
-    const responseType = 'code';
-    const googleAuthUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=${responseType}&scope=${scope}`;
-    window.location.href = googleAuthUrl;
+    const keycloakUrl = 'http://localhost:8080/realms/agenthive/protocol/openid-connect/auth';
+    const clientId = 'agenthive-frontend';
+    const redirectUri = encodeURIComponent('http://localhost:3000/api/auth/callback');
+    const scope = encodeURIComponent('openid email profile');
+    window.location.href = `${keycloakUrl}?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&scope=${scope}&kc_idp_hint=google`;
   };
 
   return (

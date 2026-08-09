@@ -17,8 +17,12 @@ class GroqProvider(BaseLLMProvider):
         api_key: str = None,
         base_url: str = None
     ) -> str:
-        # Default to a fast Llama3 model on Groq
-        model = model_name or "llama3-8b-8192"
+        models_to_try = [model_name] if model_name else [
+            "llama-3.3-70b-versatile",
+            "llama-3.1-8b-instant",
+            "qwen/qwen3.6-27b"
+        ]
+        
         host = base_url or "https://api.groq.com/openai"
         url = f"{host.rstrip('/')}/v1/chat/completions"
 
@@ -30,34 +34,39 @@ class GroqProvider(BaseLLMProvider):
             messages.append({"role": "system", "content": system_prompt})
         messages.append({"role": "user", "content": prompt})
 
-        payload = {
-            "model": model,
-            "messages": messages,
-            "max_tokens": max_tokens,
-            "temperature": 0.2
-        }
-
         headers = {
             "Content-Type": "application/json",
             "Authorization": f"Bearer {api_key}"
         }
 
-        async with httpx.AsyncClient(timeout=timeout) as client:
-            logger.info("Calling Groq API", model=model, url=url)
-            response = await client.post(url, json=payload, headers=headers)
+        last_error = None
+        for model in models_to_try:
+            payload = {
+                "model": model,
+                "messages": messages,
+                "max_tokens": max_tokens,
+                "temperature": 0.2
+            }
             
-            if response.status_code != 200:
-                error_msg = f"Groq API returned status {response.status_code}: {response.text}"
-                logger.error("Groq API error", status_code=response.status_code)
-                raise Exception(error_msg)
-
-            resp_data = response.json()
             try:
-                choices = resp_data.get("choices", [])
-                if not choices:
-                    raise Exception("No choices returned by Groq API.")
-                content = choices[0].get("message", {}).get("content", "")
-                return content
-            except (KeyError, IndexError, TypeError) as e:
-                logger.exception("Failed to parse Groq response", error=str(e), payload=resp_data)
-                raise Exception("Failed to parse Groq response") from e
+                async with httpx.AsyncClient(timeout=timeout) as client:
+                    logger.info("Calling Groq API", model=model, url=url)
+                    response = await client.post(url, json=payload, headers=headers)
+                    
+                    if response.status_code != 200:
+                        error_msg = f"Groq API returned status {response.status_code}: {response.text}"
+                        logger.error("Groq API error", status_code=response.status_code, model=model)
+                        last_error = Exception(error_msg)
+                        continue
+
+                    resp_data = response.json()
+                    choices = resp_data.get("choices", [])
+                    if not choices:
+                        raise Exception("No choices returned by Groq API.")
+                    content = choices[0].get("message", {}).get("content", "")
+                    return content
+            except Exception as e:
+                logger.warning("Failed to call Groq model", model=model, error=str(e))
+                last_error = e
+
+        raise last_error or Exception("All Groq fallback models failed.")

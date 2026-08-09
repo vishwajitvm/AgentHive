@@ -32,7 +32,8 @@ async def _execute_agent_run_async(agent_run_id: int, query: str):
                 agent_id=agent_run.agent_id,
                 query=query,
                 db=db,
-                workflow_run_id=agent_run.workflow_run_id
+                workflow_run_id=agent_run.workflow_run_id,
+                existing_run_id=agent_run_id
             )
         except Exception as e:
             logger.exception("Celery agent run task failed", run_id=agent_run_id)

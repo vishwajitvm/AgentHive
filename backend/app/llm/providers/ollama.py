@@ -32,7 +32,8 @@ class OllamaProvider(BaseLLMProvider):
             "stream": False,
             "options": {
                 "num_predict": max_tokens,
-                "temperature": 0.2
+                "temperature": 0.2,
+                "stop": ["[Observation", "Observation:", "\n\nObservation", "@hist", "[System"]
             }
         }
 

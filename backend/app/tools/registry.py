@@ -12,6 +12,24 @@ import redis.asyncio as redis
 from bs4 import BeautifulSoup
 from youtube_transcript_api import YouTubeTranscriptApi
 
+from app.tools.modules.web_tools import (
+    WikipediaTool, ArxivTool, RssReaderTool, UrlCheckerTool, WeatherTool,
+    DnsLookupTool, WhoisTool, HackerNewsTool, GithubRepoTool
+)
+from app.tools.modules.doc_tools import (
+    DocxTool, ExcelWriterTool, PptxTool, OcrTool, JsonYamlTool
+)
+from app.tools.modules.text_tools import (
+    SentimentTool, TextSummarizerTool, DiffTool, KeywordExtractorTool, MarkdownToHtmlTool
+)
+from app.tools.modules.utility_tools import (
+    CalculatorTool, DatetimeTool, ImageMetadataTool, HashCryptoTool, ZipArchiverTool
+)
+from app.tools.modules.dev_tools import (
+    GitTool, SqlQueryBuilderTool, JsonSchemaValidator
+)
+
+
 logger = get_logger(__name__)
 
 WORKSPACE_DIR = os.path.abspath(os.path.join(os.getcwd(), "workspace"))
@@ -254,6 +272,34 @@ class ScraperTool(BaseTool):
         except Exception as e:
             return f"ScraperTool error: {str(e)}"
 
+class TranslationTool(BaseTool):
+    @property
+    def slug(self) -> str: return "translation_tool"
+    @property
+    def name(self) -> str: return "Universal Translator"
+    @property
+    def description(self) -> str:
+        return "Translates foreign text to English. Arguments: text."
+
+    async def run(self, **kwargs) -> str:
+        text = kwargs.get("text", "")
+        if not text: return "Error: text argument is required."
+        
+        try:
+            import urllib.parse
+            encoded_text = urllib.parse.quote(text[:5000]) # Max 5k chars per req
+            url = f"https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=en&dt=t&q={encoded_text}"
+            
+            async with httpx.AsyncClient(timeout=15.0) as client:
+                res = await client.get(url)
+                if res.status_code == 200:
+                    data = res.json()
+                    translated_text = "".join([sentence[0] for sentence in data[0] if sentence[0]])
+                    return f"Translation:\n{translated_text}"
+                return f"Error: Translate API returned {res.status_code}"
+        except Exception as e:
+            return f"TranslationTool error: {str(e)}"
+
 class YoutubeTranscriptTool(BaseTool):
     @property
     def slug(self) -> str: return "youtube_transcript_tool"
@@ -275,9 +321,37 @@ class YoutubeTranscriptTool(BaseTool):
             
             if not video_id: return "Error: Invalid YouTube URL."
 
-            res = YouTubeTranscriptApi().fetch(video_id)
-            full_text = " ".join([entry.text for entry in res.snippets])
-            return f"Transcript for {video_id}:\n{full_text[:15000]}"
+            api = YouTubeTranscriptApi()
+            try:
+                # Try english first
+                res = api.get_transcript(video_id, languages=['en'])
+                is_translated = False
+                lang_name = "English"
+            except Exception:
+                # Fallback to any available transcript
+                tlist = api.list(video_id)
+                transcript = next(iter(tlist), None)
+                if not transcript:
+                    return "Error: No transcripts available for this video."
+                
+                lang_name = transcript.language
+                is_translated = False
+                # Attempt to translate if possible
+                if transcript.is_translatable:
+                    try:
+                        transcript = transcript.translate('en')
+                        is_translated = True
+                    except Exception:
+                        pass
+                
+                res = transcript.fetch()
+
+            full_text = " ".join([entry['text'] if isinstance(entry, dict) else entry.text for entry in res])
+            prefix = f"Transcript for {video_id} ({lang_name}):\n"
+            if not is_translated and lang_name.lower() != 'english':
+                prefix = f"Transcript for {video_id} (Note: This is in {lang_name}. Please translate and analyze it internally before outputting English):\n"
+
+            return f"{prefix}{full_text[:15000]}"
         except Exception as e:
             return f"YoutubeTranscriptTool error: {str(e)}"
 
@@ -373,11 +447,49 @@ class ToolRegistry:
             "loki_tool": LokiTool(),
             "code_tool": CodeTool(),
             "scraper_tool": ScraperTool(),
+            "translation_tool": TranslationTool(),
             "youtube_transcript_tool": YoutubeTranscriptTool(),
             "md_writer_tool": MdWriterTool(),
             "search_tool": SearchTool(),
             "pdf_tool": PdfTool(),
-            "csv_reader_tool": CsvReaderTool()
+            "csv_reader_tool": CsvReaderTool(),
+
+            # Web Tools (9)
+            "wikipedia_tool": WikipediaTool(),
+            "arxiv_tool": ArxivTool(),
+            "rss_reader_tool": RssReaderTool(),
+            "url_checker_tool": UrlCheckerTool(),
+            "weather_tool": WeatherTool(),
+            "dns_lookup_tool": DnsLookupTool(),
+            "whois_tool": WhoisTool(),
+            "hacker_news_tool": HackerNewsTool(),
+            "github_repo_tool": GithubRepoTool(),
+
+            # Document Tools (5)
+            "docx_tool": DocxTool(),
+            "excel_writer_tool": ExcelWriterTool(),
+            "pptx_tool": PptxTool(),
+            "ocr_tool": OcrTool(),
+            "json_yaml_tool": JsonYamlTool(),
+
+            # Text Tools (5)
+            "sentiment_tool": SentimentTool(),
+            "text_summarizer_tool": TextSummarizerTool(),
+            "diff_tool": DiffTool(),
+            "keyword_extractor_tool": KeywordExtractorTool(),
+            "markdown_to_html_tool": MarkdownToHtmlTool(),
+
+            # Utility Tools (5)
+            "calculator_tool": CalculatorTool(),
+            "datetime_tool": DatetimeTool(),
+            "image_metadata_tool": ImageMetadataTool(),
+            "hash_crypto_tool": HashCryptoTool(),
+            "zip_archiver_tool": ZipArchiverTool(),
+
+            # Developer Tools (3)
+            "git_tool": GitTool(),
+            "sql_query_builder_tool": SqlQueryBuilderTool(),
+            "json_schema_validator": JsonSchemaValidator()
         }
 
     def get_tool(self, slug: str) -> BaseTool: return self._tools.get(slug.lower())

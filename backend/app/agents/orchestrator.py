@@ -5,6 +5,8 @@ from app.agents.models import Agent, AgentVersion, PromptVersion
 from app.logs.models import AgentRun
 from app.agents.base import BaseAgent
 from app.logging.logger import get_logger
+from app.memory.vector_store import vector_store
+from app.core.toon import format_memory_context
 
 logger = get_logger(__name__)
 
@@ -18,7 +20,8 @@ class AgentOrchestrator:
         db: AsyncSession,
         user_id: int = None,
         workflow_run_id: int = None,
-        history: List[Dict[str, str]] = None
+        history: List[Dict[str, str]] = None,
+        existing_run_id: int = None
     ) -> Dict[str, Any]:
         logger.info("Orchestrator executing agent run", agent_id=agent_id, query=query)
         
@@ -37,46 +40,80 @@ class AgentOrchestrator:
             p_ver = prompt_res.scalar_one_or_none()
             if p_ver:
                 prompt_content = p_ver.content
+                
+        # 2.5. Inject Memory Context
+        if agent.memory_enabled:
+            memories = await vector_store.search_memories(
+                owner_type="agent",
+                owner_id=agent.id,
+                query=query,
+                db=db,
+                limit=3
+            )
+            if memories:
+                memory_text = format_memory_context(memories)
+                prompt_content += f"\n\n[RETRIEVED MEMORY CONTEXT]\n{memory_text}\n"
         
         # 3. Create or find AgentVersion snapshot
-        # For simplicity we generate a version or fetch existing version count
         ver_res = await db.execute(
             select(AgentVersion)
             .where(AgentVersion.agent_id == agent.id)
             .order_by(AgentVersion.version.desc())
         )
         last_ver = ver_res.scalars().first()
-        version_num = (last_ver.version + 1) if last_ver else 1
-
-        agent_version = AgentVersion(
-            agent_id=agent.id,
-            name=agent.name,
-            description=agent.description,
-            agent_type=agent.agent_type,
-            prompt_content=prompt_content,
-            model_policy_id=agent.model_policy_id,
-            tools_enabled=agent.tools_enabled,
-            memory_enabled=agent.memory_enabled,
-            max_steps=agent.max_steps,
-            timeout_seconds=agent.timeout_seconds,
-            version=version_num
+        
+        agent_version = last_ver
+        
+        # Check if configuration changed
+        config_changed = not last_ver or (
+            last_ver.prompt_content != prompt_content or
+            last_ver.model_policy_id != agent.model_policy_id or
+            last_ver.tools_enabled != agent.tools_enabled or
+            last_ver.memory_enabled != agent.memory_enabled or
+            last_ver.max_steps != agent.max_steps or
+            last_ver.timeout_seconds != agent.timeout_seconds
         )
-        db.add(agent_version)
-        await db.commit()
-        await db.refresh(agent_version)
+        
+        if config_changed:
+            version_num = (last_ver.version + 1) if last_ver else 1
+            agent_version = AgentVersion(
+                agent_id=agent.id,
+                name=agent.name,
+                description=agent.description,
+                agent_type=agent.agent_type,
+                prompt_content=prompt_content,
+                model_policy_id=agent.model_policy_id,
+                tools_enabled=agent.tools_enabled,
+                memory_enabled=agent.memory_enabled,
+                max_steps=agent.max_steps,
+                timeout_seconds=agent.timeout_seconds,
+                version=version_num
+            )
+            db.add(agent_version)
+            await db.commit()
+            await db.refresh(agent_version)
 
-        # 4. Create AgentRun entry
-        agent_run = AgentRun(
-            agent_id=agent.id,
-            agent_version_id=agent_version.id,
-            user_id=user_id,
-            workflow_run_id=workflow_run_id,
-            input_query=query,
-            status="running"
-        )
-        db.add(agent_run)
-        await db.commit()
-        await db.refresh(agent_run)
+        # 4. Create or Update AgentRun entry
+        if existing_run_id:
+            run_res = await db.execute(select(AgentRun).where(AgentRun.id == existing_run_id))
+            agent_run = run_res.scalar_one_or_none()
+            if not agent_run:
+                raise ValueError(f"Run ID {existing_run_id} not found.")
+            agent_run.agent_version_id = agent_version.id
+            agent_run.status = "running"
+            await db.commit()
+        else:
+            agent_run = AgentRun(
+                agent_id=agent.id,
+                agent_version_id=agent_version.id,
+                user_id=user_id,
+                workflow_run_id=workflow_run_id,
+                input_query=query,
+                status="running"
+            )
+            db.add(agent_run)
+            await db.commit()
+            await db.refresh(agent_run)
 
         # 5. Instantiate Agent worker
         agent_runner = BaseAgent(
@@ -97,13 +134,24 @@ class AgentOrchestrator:
                 db=db,
                 history=history
             )
-            return {
+            ret_val = {
                 "agent_run_id": agent_run.id,
                 "status": result["status"],
                 "output": result["output"],
                 "steps_count": result["steps_count"],
                 "elapsed_seconds": result["elapsed_seconds"]
             }
+            
+            # Save memory
+            if agent.memory_enabled and result["status"] == "completed":
+                await vector_store.add_memory(
+                    owner_type="agent",
+                    owner_id=agent.id,
+                    content=f"User: {query}\nAgent: {result['output']}",
+                    db=db
+                )
+                
+            return ret_val
         except Exception as e:
             logger.exception("Agent run execution failed in orchestrator", run_id=agent_run.id)
             agent_run.status = "failed"

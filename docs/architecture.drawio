@@ -1,0 +1,164 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mxfile host="Electron" modified="2026-08-09T12:00:00.000Z" agent="AgentHive Architecture Diagram Generator" etag="agenthive-m5-drawio" version="21.6.8" type="device">
+  <diagram id="multi-agent-architecture" name="AgentHive Multi-Agent Architecture">
+    <mxGraphModel dx="1422" dy="794" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1800" pageHeight="1400" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <!-- 1. API & Routing Layer Group -->
+        <mxCell id="group_api" value="1. API &amp; Routing Layer (FastAPI :8000)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#EFF6FF;strokeColor=#2563EB;fontStyle=1;fontSize=16;verticalAlign=top;align=left;spacingLeft=15;spacingTop=10;dashed=1;dashPattern=5 5;" vertex="1" parent="1">
+          <mxGeometry x="50" y="40" width="1700" height="150" as="geometry" />
+        </mxCell>
+        <mxCell id="node_client" value="Frontend Dashboard UI &amp; Clients&#xa;(Next.js :3000 / REST / SDK)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DBEAFE;strokeColor=#1D4ED8;fontSize=12;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="80" y="80" width="220" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="node_endpoint_orchestrate" value="POST /api/orchestrate&#xa;(MultiAgentRequest: pattern, prompt,&#xa;target_agents, use_parallel_llm)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#BFDBFE;strokeColor=#1E40AF;fontSize=12;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="360" y="80" width="260" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="node_endpoint_agent_run" value="POST /api/agents/{id}/run&#xa;(RunPayload: query, multi_agent_mode,&#xa;target_agents, use_parallel_llm)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#BFDBFE;strokeColor=#1E40AF;fontSize=12;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="670" y="80" width="260" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="node_api_router" value="FastAPI Router &amp; Auth Guard&#xa;(OIDC Keycloak JWT Validation / CORS)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#93C5FD;strokeColor=#1E3A8A;fontSize=12;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="980" y="80" width="260" height="80" as="geometry" />
+        </mxCell>
+
+        <!-- 2. MultiAgentEngine Orchestration Layer Group -->
+        <mxCell id="group_engine" value="2. MultiAgentEngine Layer (app/agents/multi_agent.py)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ECFDF5;strokeColor=#059669;fontStyle=1;fontSize=16;verticalAlign=top;align=left;spacingLeft=15;spacingTop=10;dashed=1;dashPattern=5 5;" vertex="1" parent="1">
+          <mxGeometry x="50" y="220" width="1700" height="230" as="geometry" />
+        </mxCell>
+        <mxCell id="node_engine_main" value="MultiAgentEngine.orchestrate()&#xa;(Pattern Classifier &amp; Dispatcher)&#xa;Pattern: auto | supervisor | swarm | router" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#A7F3D0;strokeColor=#047857;fontSize=13;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="80" y="260" width="260" height="160" as="geometry" />
+        </mxCell>
+        <mxCell id="node_supervisor" value="Hierarchical Supervisor Pattern&#xa;(execute_supervisor)&#xa;• Decomposition: Break user prompt into sub-tasks&#xa;• Dispatch: Sub-task execution across specialized agents&#xa;• Synthesis: LLM aggregates sub-results into final answer" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#6EE7B7;strokeColor=#065F46;fontSize=12;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="380" y="260" width="390" height="160" as="geometry" />
+        </mxCell>
+        <mxCell id="node_swarm" value="Dynamic Swarm Pattern&#xa;(execute_swarm)&#xa;• Peer Handoff Loop: Dynamic agent-to-agent transfer&#xa;• Tag Trigger: [HANDOFF] target_slug | {context}&#xa;• Execution limit: max_handoffs guard" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#6EE7B7;strokeColor=#065F46;fontSize=12;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="810" y="260" width="390" height="160" as="geometry" />
+        </mxCell>
+        <mxCell id="node_router_pattern" value="Intent Classification Router Pattern&#xa;(execute_router)&#xa;• Fast Intent Classification via LLM prompt&#xa;• Candidate Agent Matching &amp; Fallback&#xa;• Direct dispatch to single optimal agent" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#6EE7B7;strokeColor=#065F46;fontSize=12;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="1240" y="260" width="390" height="160" as="geometry" />
+        </mxCell>
+
+        <!-- 3. Agent Runtime & BaseAgent Layer Group -->
+        <mxCell id="group_agent" value="3. Agent Runtime &amp; BaseAgent Layer (app/agents/base.py)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFBEB;strokeColor=#D97706;fontStyle=1;fontSize=16;verticalAlign=top;align=left;spacingLeft=15;spacingTop=10;dashed=1;dashPattern=5 5;" vertex="1" parent="1">
+          <mxGeometry x="50" y="480" width="1700" height="210" as="geometry" />
+        </mxCell>
+        <mxCell id="node_base_agent" value="BaseAgent ReAct Execution Loop&#xa;• Step-by-step reasoning loop (Thought -&gt; Action -&gt; Obs)&#xa;• Parsing: [TOOL] slug | {args} or [ANSWER] {json}&#xa;• Max steps &amp; timeout safety limits" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FDE68A;strokeColor=#B45309;fontSize=12;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="80" y="520" width="420" height="140" as="geometry" />
+        </mxCell>
+        <mxCell id="node_toon_prompt" value="TOON Prompt Formatter &amp; Memory&#xa;(app/core/toon.py)&#xa;• Compact tags: @sys:, @hist:, @task:&#xa;• summarize_tool_result() char-truncation&#xa;• Token-efficient prompt compression" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FDE68A;strokeColor=#B45309;fontSize=12;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="540" y="520" width="360" height="140" as="geometry" />
+        </mxCell>
+        <mxCell id="node_agent_portfolio" value="Specialized Seeded Agents Portfolio (seed_elite_agents.py)&#xa;• General Assistant (general_assistant)  • Web Search Agent (web_search_agent)&#xa;• Data Analyst (data_analyst)          • Fact Checker (fact_checker_agent)&#xa;• Code Architect (code_architect)       • System Debugger (system_debugger)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FCD34D;strokeColor=#92400E;fontSize=12;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="940" y="520" width="760" height="140" as="geometry" />
+        </mxCell>
+
+        <!-- 4. Modular 40-Tool Registry Group -->
+        <mxCell id="group_tools" value="4. Modular 40-Tool Registry &amp; Categories (app/tools/registry.py &amp; app/tools/modules/)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F3E8FF;strokeColor=#9333EA;fontStyle=1;fontSize=16;verticalAlign=top;align=left;spacingLeft=15;spacingTop=10;dashed=1;dashPattern=5 5;" vertex="1" parent="1">
+          <mxGeometry x="50" y="720" width="1700" height="230" as="geometry" />
+        </mxCell>
+        <mxCell id="node_tool_registry" value="ToolRegistry Catalog&#xa;(40 Total Tools Registered)&#xa;• Base Infrastructure Tools (13)&#xa;• Categorized Sub-modules (27)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E9D5FF;strokeColor=#7E22CE;fontSize=12;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="80" y="760" width="220" height="170" as="geometry" />
+        </mxCell>
+        <mxCell id="node_web_tools" value="Web Tools Sub-module (9)&#xa;• WikipediaTool&#xa;• ArxivTool&#xa;• RssReaderTool&#xa;• UrlCheckerTool&#xa;• WeatherTool&#xa;• DnsLookupTool&#xa;• WhoisTool&#xa;• HackerNewsTool&#xa;• GithubRepoTool" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DDD6FE;strokeColor=#6D28D9;fontSize=11;fontStyle=1;align=left;spacingLeft=10;" vertex="1" parent="1">
+          <mxGeometry x="330" y="760" width="250" height="170" as="geometry" />
+        </mxCell>
+        <mxCell id="node_doc_tools" value="Document Tools Sub-module (5)&#xa;• DocxTool&#xa;• ExcelWriterTool&#xa;• PptxTool&#xa;• OcrTool&#xa;• JsonYamlTool" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DDD6FE;strokeColor=#6D28D9;fontSize=11;fontStyle=1;align=left;spacingLeft=10;" vertex="1" parent="1">
+          <mxGeometry x="610" y="760" width="250" height="170" as="geometry" />
+        </mxCell>
+        <mxCell id="node_text_tools" value="Text Tools Sub-module (5)&#xa;• SentimentTool&#xa;• TextSummarizerTool&#xa;• DiffTool&#xa;• KeywordExtractorTool&#xa;• MarkdownToHtmlTool" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DDD6FE;strokeColor=#6D28D9;fontSize=11;fontStyle=1;align=left;spacingLeft=10;" vertex="1" parent="1">
+          <mxGeometry x="890" y="760" width="250" height="170" as="geometry" />
+        </mxCell>
+        <mxCell id="node_util_tools" value="Utility Tools Sub-module (5)&#xa;• CalculatorTool&#xa;• DatetimeTool&#xa;• ImageMetadataTool&#xa;• HashCryptoTool&#xa;• ZipArchiverTool" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DDD6FE;strokeColor=#6D28D9;fontSize=11;fontStyle=1;align=left;spacingLeft=10;" vertex="1" parent="1">
+          <mxGeometry x="1170" y="760" width="250" height="170" as="geometry" />
+        </mxCell>
+        <mxCell id="node_dev_tools" value="Developer Tools Sub-module (3)&#xa;• GitTool&#xa;• SqlQueryBuilderTool&#xa;• JsonSchemaValidator" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#C4B5FD;strokeColor=#5B21B6;fontSize=11;fontStyle=1;align=left;spacingLeft=10;" vertex="1" parent="1">
+          <mxGeometry x="1450" y="760" width="260" height="170" as="geometry" />
+        </mxCell>
+
+        <!-- 5. Speculative Parallel LLM Router Group -->
+        <mxCell id="group_llm" value="5. Speculative Parallel LLM Router (app/llm/router.py)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FEF2F2;strokeColor=#EF4444;fontStyle=1;fontSize=16;verticalAlign=top;align=left;spacingLeft=15;spacingTop=10;dashed=1;dashPattern=5 5;" vertex="1" parent="1">
+          <mxGeometry x="50" y="970" width="1700" height="190" as="geometry" />
+        </mxCell>
+        <mxCell id="node_llm_router" value="LLMRouter.generate_parallel()&#xa;• Concurrent Multi-Provider Speculative Racing&#xa;• asyncio.wait(..., return_when=FIRST_COMPLETED)&#xa;• Returns lowest-latency non-error response &amp; cancels pending" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FCA5A5;strokeColor=#B91C1C;fontSize=12;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="80" y="1010" width="450" height="130" as="geometry" />
+        </mxCell>
+        <mxCell id="node_prov_gemini" value="Gemini Provider Adapter&#xa;(gemini-1.5-flash)&#xa;Primary Cloud Provider" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FECACA;strokeColor=#DC2626;fontSize=11;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="570" y="1010" width="200" height="130" as="geometry" />
+        </mxCell>
+        <mxCell id="node_prov_groq" value="Groq Provider Adapter&#xa;(llama-3.1-8b-instant)&#xa;Ultra-Low Latency Inference" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FECACA;strokeColor=#DC2626;fontSize=11;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="800" y="1010" width="200" height="130" as="geometry" />
+        </mxCell>
+        <mxCell id="node_prov_ollama" value="Ollama Provider Adapter&#xa;(llama3 / mistral)&#xa;Zero-Cost Local Fallback" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FECACA;strokeColor=#DC2626;fontSize=11;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="1030" y="1010" width="200" height="130" as="geometry" />
+        </mxCell>
+        <mxCell id="node_prov_openai" value="OpenAI Provider Adapter&#xa;(gpt-4o-mini)&#xa;Cloud Secondary Provider" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FECACA;strokeColor=#DC2626;fontSize=11;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="1260" y="1010" width="200" height="130" as="geometry" />
+        </mxCell>
+        <mxCell id="node_prov_hf" value="HuggingFace Adapter&#xa;(Llama-3.2-1B-Instruct)&#xa;Open-Weight Fallback" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FCA5A5;strokeColor=#991B1B;fontSize=11;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="1490" y="1010" width="220" height="130" as="geometry" />
+        </mxCell>
+
+        <!-- 6. Database & Observability Stack Group -->
+        <mxCell id="group_infra" value="6. Infrastructure, Database &amp; Observability Stack" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F0FDF4;strokeColor=#16A34A;fontStyle=1;fontSize=16;verticalAlign=top;align=left;spacingLeft=15;spacingTop=10;dashed=1;dashPattern=5 5;" vertex="1" parent="1">
+          <mxGeometry x="50" y="1180" width="1700" height="180" as="geometry" />
+        </mxCell>
+        <mxCell id="node_postgres" value="PostgreSQL + pgvector (:5432)&#xa;• Agents, Prompts, Runs, Tool Calls&#xa;• LLM Call logs &amp; Vector Embeddings" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#BBF7D0;strokeColor=#15803D;fontSize=12;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="80" y="1220" width="260" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="node_redis" value="Redis Cache &amp; Queue (:6379)&#xa;• Celery task broker &amp; cache&#xa;• Session state &amp; rate limiting" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#BBF7D0;strokeColor=#15803D;fontSize=12;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="370" y="1220" width="260" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="node_celery" value="Celery Worker &amp; Async Queue&#xa;• Background task processing&#xa;• Scheduled agent runs &amp; jobs" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#BBF7D0;strokeColor=#15803D;fontSize=12;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="660" y="1220" width="260" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="node_minio" value="MinIO S3 Object Storage (:9000)&#xa;• Document uploads &amp; attachments&#xa;• Truncated tool output overflow logs" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#BBF7D0;strokeColor=#15803D;fontSize=12;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="950" y="1220" width="260" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="node_obs_stack" value="Full Observability Stack&#xa;• Grafana Loki (:3100) — Container &amp; Structured Log Aggregation&#xa;• Prometheus (:9090) — Endpoint &amp; LLM Latency Metrics Scraping&#xa;• OpenTelemetry Tracing — Distributed Trace Spans&#xa;• Grafana (:3001) — Integrated Visual Monitoring Dashboards" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#86EFAC;strokeColor=#166534;fontSize=12;fontStyle=1;align=left;spacingLeft=15;" vertex="1" parent="1">
+          <mxGeometry x="1240" y="1220" width="470" height="120" as="geometry" />
+        </mxCell>
+
+        <!-- Connectors / Edges -->
+        <mxCell id="edge_1" value="REST Requests" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#2563EB;strokeWidth=2;fontSize=11;fontStyle=1;" edge="1" parent="1" source="node_client" target="node_endpoint_orchestrate">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge_2" value="Direct Run" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#2563EB;strokeWidth=2;fontSize=11;fontStyle=1;" edge="1" parent="1" source="node_client" target="node_endpoint_agent_run">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge_3" value="Orchestrations" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#059669;strokeWidth=2;fontSize=11;fontStyle=1;" edge="1" parent="1" source="node_endpoint_orchestrate" target="node_engine_main">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge_4" value="Pattern Choice" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#059669;strokeWidth=2;fontSize=11;fontStyle=1;" edge="1" parent="1" source="node_engine_main" target="node_supervisor">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge_5" value="Peer Control Loop" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#059669;strokeWidth=2;fontSize=11;fontStyle=1;" edge="1" parent="1" source="node_engine_main" target="node_swarm">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge_6" value="Single Selection" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#059669;strokeWidth=2;fontSize=11;fontStyle=1;" edge="1" parent="1" source="node_engine_main" target="node_router_pattern">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge_7" value="Executes Agent" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#D97706;strokeWidth=2;fontSize=11;fontStyle=1;" edge="1" parent="1" source="node_supervisor" target="node_base_agent">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge_8" value="Context Formatting" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#D97706;strokeWidth=2;fontSize=11;fontStyle=1;" edge="1" parent="1" source="node_base_agent" target="node_toon_prompt">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge_9" value="Tool Call Invocation" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#9333EA;strokeWidth=2;fontSize=11;fontStyle=1;" edge="1" parent="1" source="node_base_agent" target="node_tool_registry">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge_10" value="Speculative Racing" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#EF4444;strokeWidth=2;fontSize=11;fontStyle=1;" edge="1" parent="1" source="node_base_agent" target="node_llm_router">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge_11" value="Concurrent LLM Queries" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#EF4444;strokeWidth=2;fontSize=11;fontStyle=1;" edge="1" parent="1" source="node_llm_router" target="node_prov_gemini">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge_12" value="Persists &amp; Logs" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#16A34A;strokeWidth=2;fontSize=11;fontStyle=1;" edge="1" parent="1" source="node_llm_router" target="node_postgres">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

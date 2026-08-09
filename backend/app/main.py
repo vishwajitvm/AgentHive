@@ -50,9 +50,7 @@ async def startup_event():
     async with AsyncSessionLocal() as db:
         from app.tools.seeder import seed_tools
         await seed_tools(db)
-        # await initialize_agents(db)
-        # from app.agents.seeder import seed_new_agents
-        # await seed_new_agents(db)
+        await initialize_agents(db)
         
     logger.info("AgentHive API service has successfully started.")
 
@@ -85,6 +83,8 @@ async def request_logging_middleware(request: Request, call_next):
         )
         raise
 
+from app.api.routes.orchestrator import router as orchestrator_router
+
 # Register Routers
 app.include_router(health_router)
 app.include_router(agents_router, prefix="/api")
@@ -94,9 +94,15 @@ app.include_router(logs_router, prefix="/api")
 app.include_router(settings_router, prefix="/api")
 app.include_router(tools_router, prefix="/api")
 app.include_router(auth_router, prefix="/api/auth")
+app.include_router(orchestrator_router, prefix="/api")
 
 # Tracenest UI Router
-app.include_router(tracenest_router, prefix="/tracenest", tags=["tracenest"])
+import tracenest.ui.router
+from pathlib import Path
+# Force tracenest to look at the workspace root equivalent inside docker
+# If the root isn't mounted to the backend, it can't read it. 
+# Wait! /app is mapped to ./backend. It CANNOT read ../TraceNestLogs unless we mount it!
+app.include_router(tracenest_router, prefix="")
 
 try:
     from app.api.routes.upload import router as upload_router

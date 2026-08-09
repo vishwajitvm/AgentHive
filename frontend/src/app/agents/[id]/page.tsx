@@ -1,5 +1,7 @@
 'use client';
 
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { getAgent, runAgent, getRunSteps, uploadToWorkspace } from '../../../lib/api';
@@ -32,6 +34,7 @@ export default function AgentConsolePage() {
   const [result, setResult] = useState<any>(null);
   const [trace, setTrace] = useState<any>({ steps: [], tool_calls: [] });
   const [error, setError] = useState('');
+  const [showLogs, setShowLogs] = useState(false);
   
   // Context variables
   const [sessionContext, setSessionContext] = useState('');
@@ -135,12 +138,6 @@ export default function AgentConsolePage() {
         </Link>
       </div>
 
-      {error && (
-        <div className="p-4 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-400 text-sm font-semibold">
-          {error}
-        </div>
-      )}
-
       {/* Main console layout */}
       <div className="grid lg:grid-cols-5 gap-8">
         {/* Left Side: Input console */}
@@ -217,12 +214,12 @@ export default function AgentConsolePage() {
 
         {/* Right Side: Observability trace timeline */}
         <div className="lg:col-span-3 space-y-6">
-          <div className="rounded-xl border border-slate-900 bg-slate-950/30 p-6 min-h-[400px] flex flex-col justify-between">
+          <div className="rounded-xl border border-slate-900 bg-slate-950/30 p-6 min-h-[400px] flex flex-col justify-between shadow-sm">
             {/* Trace logs header */}
-            <div className="space-y-6 flex-1">
+            <div className="space-y-6 flex-1 flex flex-col">
               <div className="flex justify-between items-center border-b border-slate-900 pb-3">
                 <h3 className="font-bold text-base flex items-center gap-2 text-slate-300">
-                  <Activity size={18} className="text-emerald-400" /> Observability Trace logs
+                  <Activity size={18} className="text-emerald-400" /> Execution Results
                 </h3>
                 {running && (
                   <span className="text-xs text-emerald-400 font-semibold flex items-center gap-1.5 animate-pulse">
@@ -232,32 +229,68 @@ export default function AgentConsolePage() {
               </div>
 
               {/* Steps display */}
-              <div className="space-y-6 max-h-[500px] overflow-y-auto pr-2">
-                {trace.steps && trace.steps.length > 0 && (
-                  <TraceDiagram steps={trace.steps} />
-                )}
-
-                {/* Final response card */}
-                {result && (
-                  <div className="p-5 rounded-xl border border-emerald-500/20 bg-emerald-500/5 space-y-3">
-                    <div className="flex justify-between items-center border-b border-emerald-500/10 pb-2">
-                      <h4 className="text-sm font-bold text-emerald-400 flex items-center gap-1.5">
-                        <CheckCircle size={16} /> Final Answer Resolved
-                      </h4>
-                      <span className="text-[10px] text-slate-400 flex items-center gap-1">
-                        <Clock size={10} /> {result.elapsed_seconds}s elapsed
-                      </span>
-                    </div>
-                    <p className="text-sm text-slate-200 leading-relaxed font-medium whitespace-pre-wrap">{result.output}</p>
-                  </div>
-                )}
-
-                {!running && trace.steps.length === 0 && !result && (
-                  <div className="text-center py-20 text-slate-600 space-y-2">
+              <div className="flex-1 flex flex-col space-y-6">
+                {!running && trace.steps.length === 0 && !result && !error && (
+                  <div className="flex-1 flex flex-col items-center justify-center text-center py-20 text-slate-600 space-y-2">
                     <Cpu size={32} className="mx-auto text-slate-800" />
                     <p className="text-sm">Submit an instruction to start the reasoning agent loop.</p>
                   </div>
                 )}
+
+                {error && (
+                  <div className="p-5 rounded-xl border border-rose-500/20 bg-rose-500/10 space-y-3 shadow-lg">
+                     <h4 className="text-sm font-bold text-rose-400 flex items-center gap-1.5">
+                       <AlertTriangle size={16} /> Execution Failed
+                     </h4>
+                     <p className="text-sm text-slate-200 leading-relaxed font-medium">{error}</p>
+                  </div>
+                )}
+
+                {/* Final response card */}
+                {result && (
+                  <div className="p-5 rounded-xl border border-emerald-500/20 bg-emerald-500/5 space-y-3 shadow-lg transform transition-all duration-500 ease-in-out">
+                    <div className="flex justify-between items-center border-b border-emerald-500/10 pb-2">
+                      <h4 className="text-sm font-bold text-emerald-400 flex items-center gap-1.5">
+                        <CheckCircle size={16} /> Final Answer Resolved
+                      </h4>
+                      <span className="text-[10px] text-slate-400 flex items-center gap-1 bg-slate-900 px-2.5 py-1 rounded-full border border-slate-800 shadow-inner">
+                        <Clock size={10} className="text-emerald-400" /> {result.elapsed_seconds}s elapsed
+                      </span>
+                    </div>
+                    <div className="text-sm text-slate-200 leading-relaxed font-medium mt-3 bg-slate-900/50 p-4 rounded border border-emerald-500/20 prose prose-invert prose-emerald max-w-none">
+                      <ReactMarkdown 
+                        remarkPlugins={[remarkGfm]}
+                      >
+                        {result.output || result.error || "Execution completed without output."}
+                      </ReactMarkdown>
+                    </div>
+                  </div>
+                )}
+
+                {/* Button to toggle logs */}
+                {(trace?.steps?.length > 0) && (
+                  <div className="border-t border-slate-900 pt-4 mt-auto">
+                    <button 
+                      onClick={() => setShowLogs(!showLogs)}
+                      type="button"
+                      className="w-full py-3 rounded-lg bg-slate-900/80 hover:bg-slate-800 border border-slate-800 hover:border-slate-700 text-slate-300 font-semibold text-sm flex items-center justify-center gap-2 transition-all duration-200 shadow-sm"
+                    >
+                      <Terminal size={16} className={showLogs ? "text-emerald-400" : "text-slate-500"} /> 
+                      {showLogs ? 'Hide Observability Trace Logs' : 'View Observability Trace Logs'}
+                    </button>
+                  </div>
+                )}
+
+                {/* Logs Area with transition */}
+                <div 
+                  className={`overflow-hidden transition-all duration-500 ease-in-out ${showLogs ? 'max-h-[800px] opacity-100' : 'max-h-0 opacity-0'}`}
+                >
+                  <div className="space-y-6 max-h-[600px] overflow-y-auto pr-2">
+                    {trace.steps && trace.steps.length > 0 && (
+                      <TraceDiagram steps={trace.steps} />
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
           </div>

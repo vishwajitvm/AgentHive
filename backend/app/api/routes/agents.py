@@ -1,10 +1,10 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Query, UploadFile, File
+from fastapi import APIRouter, Depends, HTTPException, status, Query, UploadFile, File, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, delete, func
 from typing import List, Dict, Any, Optional
 import os
 import shutil
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from app.core.database import get_db
 from app.agents.models import Agent, Prompt, PromptVersion, AgentVersion
@@ -12,8 +12,11 @@ from app.logs.models import AgentRun
 from app.logs.service import logs_service
 from app.agents.orchestrator import orchestrator
 from app.logging.logger import get_logger
+import hashlib
 
 logger = get_logger(__name__)
+GLOBAL_CACHE = {}
+
 router = APIRouter(prefix="/agents", tags=["agents"])
 
 # Pydantic schemas
@@ -54,7 +57,10 @@ class AgentReorderPayload(BaseModel):
     agents: List[AgentReorderItem]
 
 class RunPayload(BaseModel):
-    query: str
+    query: str = Field(..., min_length=1)
+    multi_agent_mode: Optional[str] = Field(None, description="Multi-agent mode: direct, router, supervisor, swarm, auto")
+    target_agents: Optional[List[str]] = Field(None, description="Candidate agent slugs or IDs")
+    use_parallel_llm: bool = Field(False, description="Enable speculative parallel LLM racing")
 
 @router.get("")
 async def list_agents(db: AsyncSession = Depends(get_db)):
@@ -214,6 +220,7 @@ async def delete_agent(agent_id: int, db: AsyncSession = Depends(get_db)):
 async def run_agent(
     agent_id: int,
     payload: RunPayload,
+    response: Response,
     background: bool = Query(False),
     db: AsyncSession = Depends(get_db)
 ):
@@ -240,6 +247,7 @@ async def run_agent(
         # 2. Trigger Celery Task
         execute_agent_run.delay(agent_run.id, payload.query)
         logger.info("Enqueued background agent run Celery job", run_id=agent_run.id)
+        response.status_code = status.HTTP_202_ACCEPTED
         return {
             "success": True,
             "message": "Agent run enqueued in Celery queue.",
@@ -249,11 +257,30 @@ async def run_agent(
     else:
         # Synchronous execution
         try:
+            cache_key = hashlib.md5(f"{agent_id}:{payload.query}:{payload.multi_agent_mode}".encode()).hexdigest()
+            if cache_key in GLOBAL_CACHE:
+                logger.info("Cache hit for query", query=payload.query)
+                return GLOBAL_CACHE[cache_key]
+
+            if payload.multi_agent_mode and payload.multi_agent_mode.lower() != "direct":
+                from app.agents.multi_agent import multi_agent_engine
+                result = await multi_agent_engine.orchestrate(
+                    query=payload.query,
+                    db=db,
+                    pattern=payload.multi_agent_mode,
+                    target_agents=payload.target_agents,
+                    initial_agent=agent.slug,
+                    use_parallel_llm=payload.use_parallel_llm
+                )
+                GLOBAL_CACHE[cache_key] = result
+                return result
+
             result = await orchestrator.execute_run(
                 agent_id=agent_id,
                 query=payload.query,
                 db=db
             )
+            GLOBAL_CACHE[cache_key] = result
             return result
         except Exception as e:
             logger.exception("Synchronous agent run failed", agent_id=agent_id)
