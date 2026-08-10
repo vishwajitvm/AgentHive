@@ -50,6 +50,25 @@ export default function DashboardHome() {
   // Filters State
   const [timeRange, setTimeRange] = useState('all');
   const [providerFilter, setProviderFilter] = useState('all');
+  
+  // Currency State
+  const [currency, setCurrency] = useState('USD');
+  const [exchangeRate, setExchangeRate] = useState(83.0); // Default fallback
+
+  useEffect(() => {
+    const fetchExchangeRate = async () => {
+      try {
+        const res = await fetch('https://api.exchangerate-api.com/v4/latest/USD');
+        const data = await res.json();
+        if (data && data.rates && data.rates.INR) {
+          setExchangeRate(data.rates.INR);
+        }
+      } catch (e) {
+        console.error("Failed to fetch exchange rate", e);
+      }
+    };
+    fetchExchangeRate();
+  }, []);
 
   const fetchStats = async () => {
     try {
@@ -73,7 +92,7 @@ export default function DashboardHome() {
 
   useEffect(() => {
     fetchStats();
-    const interval = setInterval(fetchStats, 6000);
+    const interval = setInterval(fetchStats, 60000); // Increased from 6s to 60s
     return () => clearInterval(interval);
   }, [timeRange, providerFilter]);
   
@@ -83,12 +102,16 @@ export default function DashboardHome() {
       setResources(res);
     };
     fetchRes();
-    const interval = setInterval(fetchRes, 3000);
+    const interval = setInterval(fetchRes, 15000); // Increased from 3s to 15s
     return () => clearInterval(interval);
   }, []);
 
+  const displayCost = currency === 'INR' 
+    ? `₹${((stats.estimated_cost || 0) * exchangeRate).toFixed(2)}`
+    : `$${(stats.estimated_cost || 0).toFixed(2)}`;
+
   const statCards = [
-    { name: 'Estimated Cost', val: `$${stats.estimated_cost?.toFixed(2) || '0.00'}`, desc: 'Approximated API spend', icon: DollarSign, color: 'from-emerald-500 to-teal-600' },
+    { name: 'Estimated Cost', val: displayCost, desc: 'Approximated API spend', icon: DollarSign, color: 'from-emerald-500 to-teal-600' },
     { name: 'Total Executions', val: stats.total_runs, desc: 'Workflow runs in window', icon: Cpu, color: 'from-blue-500 to-indigo-600' },
     { name: 'LLM Call Requests', val: stats.total_llm_calls, desc: 'API queries routed', icon: Layers, color: 'from-purple-500 to-pink-600' },
     { name: 'Policy Success Rate', val: `${stats.success_rate}%`, desc: 'Runs without errors', icon: CheckCircle, color: 'from-amber-500 to-orange-600' },
@@ -151,6 +174,17 @@ export default function DashboardHome() {
               <option value="huggingface">Hugging Face</option>
               <option value="groq">Groq</option>
               <option value="ollama">Ollama</option>
+            </select>
+          </div>
+          <div className="flex flex-col space-y-1.5 w-full sm:w-28">
+            <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Currency</label>
+            <select 
+              value={currency}
+              onChange={e => setCurrency(e.target.value)}
+              className="bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-300 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all outline-none"
+            >
+              <option value="USD">USD ($)</option>
+              <option value="INR">INR (₹)</option>
             </select>
           </div>
         </div>

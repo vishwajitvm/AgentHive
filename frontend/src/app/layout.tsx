@@ -43,7 +43,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       }
     };
     checkHealth();
-    const interval = setInterval(checkHealth, 8000);
+    const interval = setInterval(checkHealth, 30000); // Increased from 8s to 30s
     return () => clearInterval(interval);
   }, []);
 
@@ -121,7 +121,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
   return (
     <html lang="en">
-      <body className="bg-slate-950 text-slate-100 flex min-h-screen">
+      <body className="bg-slate-950 text-slate-100 flex h-screen overflow-hidden">
         {/* Sidebar */}
         <aside className={`border-r border-slate-900 bg-slate-950/70 backdrop-blur-md transition-all duration-300 flex flex-col ${isCollapsed ? 'w-20' : 'w-64'}`}>
           {/* Logo */}
@@ -143,7 +143,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </div>
 
           {/* Navigation links */}
-          <nav className="flex-1 px-4 py-6 space-y-2">
+          <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto custom-scrollbar">
             {navItems.map((item) => {
               const Icon = item.icon;
               const isActive = pathname === item.path;
@@ -165,7 +165,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </nav>
 
           {/* Footer health indicators */}
-          <div className="p-4 border-t border-slate-900 space-y-3">
+          <div className="p-4 border-t border-slate-900 space-y-3 shrink-0">
             <div className="flex items-center gap-3 justify-center md:justify-start">
               <span className={`w-3 h-3 rounded-full animate-pulse ${
                 healthStatus === 'healthy' ? 'bg-emerald-500 shadow-[0_0_8px_rgba(34,197,94,0.5)]' :
@@ -184,9 +184,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         </aside>
 
         {/* Main Content Pane */}
-        <div className="flex-1 flex flex-col min-h-screen">
+        <div className="flex-1 flex flex-col h-screen overflow-hidden">
           {/* Header */}
-          <header className="border-b border-slate-900 bg-slate-950/40 backdrop-blur-md px-8 py-4 flex items-center justify-between sticky top-0 z-50">
+          <header className="border-b border-slate-900 bg-slate-950/40 backdrop-blur-md px-8 py-4 flex items-center justify-between shrink-0">
             <div>
               <h1 className="text-lg font-bold">Workspace dashboard</h1>
             </div>
@@ -216,9 +216,20 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             </div>
           </header>
 
-          <main className="flex-1 p-8 overflow-y-auto bg-gradient-to-br from-slate-950 to-slate-900">
+          {/* Scrollable Main Content */}
+          <main className="flex-1 p-8 overflow-y-auto bg-gradient-to-br from-slate-950 to-slate-900 custom-scrollbar">
             {children}
           </main>
+          
+          {/* Main Footer (Global) */}
+          <footer className="border-t border-slate-900 bg-slate-950 px-8 py-3 shrink-0 flex items-center justify-between text-xs text-slate-500">
+            <div>&copy; {new Date().getFullYear()} AgentHive Platform</div>
+            <div className="flex items-center gap-4">
+              <span className="hover:text-slate-300 cursor-pointer transition-colors">Documentation</span>
+              <span className="hover:text-slate-300 cursor-pointer transition-colors">Support</span>
+              <span className="hover:text-slate-300 cursor-pointer transition-colors">v1.0.0-beta</span>
+            </div>
+          </footer>
         </div>
       </body>
     </html>
