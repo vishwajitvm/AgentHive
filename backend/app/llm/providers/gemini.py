@@ -7,12 +7,12 @@ logger = get_logger(__name__)
 class GeminiProvider(BaseLLMProvider):
     """Google Gemini model provider adapter utilizing direct REST endpoints."""
     fallback_models = [
-        "gemini-3.1-pro",
-        "gemini-3.6-flash",
-        "gemini-3.5-flash",
-        "gemini-3.5-flash-lite",
+        "gemini-2.0-flash",
+        "gemini-2.0-pro-exp",
+        "gemini-2.0-flash-lite",
         "gemini-1.5-pro",
-        "gemini-1.5-flash"
+        "gemini-1.5-flash",
+        "gemini-1.5-flash-8b"
     ]
 
     async def generate(
@@ -26,9 +26,9 @@ class GeminiProvider(BaseLLMProvider):
         base_url: str = None
     ) -> str:
         models_to_try = [model_name] if model_name else [
-            "gemini-1.5-flash",
+            "gemini-2.0-flash",
             "gemini-1.5-pro",
-            "gemini-2.0-flash-exp"
+            "gemini-1.5-flash"
         ]
         
         if not api_key:

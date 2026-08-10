@@ -6,6 +6,13 @@ logger = get_logger(__name__)
 
 class NvidiaProvider(BaseLLMProvider):
     """NVIDIA NIM OpenAI-compatible provider adapter."""
+    fallback_models = [
+        "nvidia/nemotron-4-340b-instruct",
+        "nvidia/llama-3.1-nemotron-70b-instruct",
+        "nvidia/nemotron-mini-4b-instruct",
+        "nvidia/nemotron-3-8b-chat-steerlm",
+        "nvidia/nemotron-4-mini-hindi-4b-instruct"
+    ]
 
     async def generate(
         self,
@@ -19,16 +26,11 @@ class NvidiaProvider(BaseLLMProvider):
     ) -> str:
         
         models_to_try = [model_name] if model_name else [
-            "meta/llama-3.3-70b-instruct",
             "nvidia/nemotron-4-340b-instruct",
             "nvidia/llama-3.1-nemotron-70b-instruct",
-            "mistralai/mistral-large-2-instruct",
-            "mistralai/mixtral-8x22b-v0.1",
-            "google/gemma-4-31b-it",
-            "databricks/dbrx-instruct",
-            "microsoft/phi-3.5-moe-instruct",
-            "meta/llama-3.1-70b-instruct",
-            "meta/llama-3.1-8b-instruct"
+            "nvidia/nemotron-mini-4b-instruct",
+            "nvidia/nemotron-3-8b-chat-steerlm",
+            "nvidia/nemotron-4-mini-hindi-4b-instruct"
         ]
         
         host = base_url or "https://integrate.api.nvidia.com"

@@ -60,8 +60,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     if (token) {
       try {
         const payload = JSON.parse(atob(token.split('.')[1]));
-        const roles = payload.realm_access?.roles || [];
-        if (roles.includes('super_admin') || roles.includes('admin') || payload.email === 'vishwajitmall50@gmail.com') {
+        const roles = payload.resource_access?.['agenthive-frontend']?.roles || [];
+        if (roles.includes('super_admin') || roles.includes('admin')) {
           setIsAdmin(true);
         }
         setUserProfile({
@@ -98,7 +98,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     { name: 'Tools Directory', path: '/tools', icon: Wrench, adminOnly: false },
     { name: 'Models & Policies', path: '/models', icon: Sliders, adminOnly: false },
     { name: 'Workflows', path: '/workflows', icon: Workflow, adminOnly: false },
-    { name: 'Activity Logs', path: '/logs', icon: Terminal, adminOnly: false },
+    { name: 'Activity Logs', path: '/logs', icon: Terminal, adminOnly: true },
     { name: 'Secrets Manager', path: '/env', icon: Key, adminOnly: true },
     { name: 'Monitoring', path: '/monitoring', icon: Activity, adminOnly: true },
   ];

@@ -56,8 +56,8 @@ async def get_current_user(
         print(f"JWT Validation Error: {e}")
         raise credentials_exception
         
-    roles = payload.get("realm_access", {}).get("roles", [])
-    is_super_admin = "super_admin" in roles or email == "vishwajitmall50@gmail.com"
+    roles = payload.get("resource_access", {}).get("agenthive-frontend", {}).get("roles", [])
+    is_super_admin = "super_admin" in roles
     role_str = "super_admin" if is_super_admin else ("admin" if "admin" in roles else "user")
 
     # Check if user exists in our DB, if not create them
@@ -67,10 +67,10 @@ async def get_current_user(
     if user is None:
         user = User(
             email=email,
-            username=payload.get("preferred_username", email),
+            name=payload.get("preferred_username", email),
             role=role_str,
-            hashed_password="keycloak_managed",
-            is_active=True
+            password_hash="keycloak_managed",
+            status="active"
         )
         db.add(user)
         await db.commit()

@@ -73,7 +73,8 @@ export default function AgentsListPage() {
     if (token) {
       try {
         const payload = JSON.parse(atob(token.split('.')[1]));
-        if (payload.email === 'vishwajitmall50@gmail.com') {
+        const roles = payload.resource_access?.['agenthive-frontend']?.roles || [];
+        if (roles.includes('admin') || roles.includes('super_admin')) {
           setIsAdmin(true);
         }
       } catch (e) {

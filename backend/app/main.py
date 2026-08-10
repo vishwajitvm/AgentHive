@@ -1,10 +1,16 @@
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Depends
 from fastapi.middleware.cors import CORSMiddleware
+from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
+from slowapi import _rate_limit_exceeded_handler
+
 from app.core.config import settings
 from app.logging.logger import configure_logging, get_logger
 from app.core.database import init_db
 from app.agents.registry import initialize_agents
 from app.core.exceptions import AgentHiveException, agenthive_exception_handler
+from app.core.limiter import limiter
+from app.core.auth import get_current_user
 
 # Import Routers
 from app.api.health import router as health_router
@@ -26,8 +32,14 @@ logger = get_logger(__name__)
 
 app = FastAPI(title="AgentHive API", version="0.1.0")
 
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
 # Add Tracenest middleware for comprehensive API logging
 app.add_middleware(TraceNestMiddleware)
+
+# Add Rate Limit middleware
+app.add_middleware(SlowAPIMiddleware)
 
 app.add_middleware(
     CORSMiddleware,
@@ -87,14 +99,17 @@ from app.api.routes.orchestrator import router as orchestrator_router
 
 # Register Routers
 app.include_router(health_router)
-app.include_router(agents_router, prefix="/api")
-app.include_router(models_router, prefix="/api")
-app.include_router(workflows_router, prefix="/api")
-app.include_router(logs_router, prefix="/api")
-app.include_router(settings_router, prefix="/api")
-app.include_router(tools_router, prefix="/api")
 app.include_router(auth_router, prefix="/api/auth")
-app.include_router(orchestrator_router, prefix="/api")
+
+# Protected Routers
+protected_deps = [Depends(get_current_user)]
+app.include_router(agents_router, prefix="/api", dependencies=protected_deps)
+app.include_router(models_router, prefix="/api", dependencies=protected_deps)
+app.include_router(workflows_router, prefix="/api", dependencies=protected_deps)
+app.include_router(logs_router, prefix="/api", dependencies=protected_deps)
+app.include_router(settings_router, prefix="/api", dependencies=protected_deps)
+app.include_router(tools_router, prefix="/api", dependencies=protected_deps)
+app.include_router(orchestrator_router, prefix="/api", dependencies=protected_deps)
 
 # Tracenest UI Router
 import tracenest.ui.router
@@ -106,7 +121,7 @@ app.include_router(tracenest_router, prefix="")
 
 try:
     from app.api.routes.upload import router as upload_router
-    app.include_router(upload_router, prefix="/api")
+    app.include_router(upload_router, prefix="/api", dependencies=protected_deps)
 except ImportError:
     logger.warning("Upload router not found.")
 

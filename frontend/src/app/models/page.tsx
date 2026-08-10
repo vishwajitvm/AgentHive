@@ -168,6 +168,7 @@ export default function ModelProvidersPage() {
                   <option value="openai">OpenAI (GPT)</option>
                   <option value="huggingface">Hugging Face</option>
                   <option value="groq">Groq</option>
+                  <option value="nvidia">NVIDIA</option>
                 </select>
               </div>
 
@@ -183,6 +184,7 @@ export default function ModelProvidersPage() {
                   <option value="openai">OpenAI (GPT)</option>
                   <option value="huggingface">Hugging Face</option>
                   <option value="groq">Groq</option>
+                  <option value="nvidia">NVIDIA</option>
                 </select>
               </div>
             </div>
@@ -193,7 +195,7 @@ export default function ModelProvidersPage() {
                 type="text" 
                 value={policyForm.fallback_order} 
                 onChange={(e) => setPolicyForm({...policyForm, fallback_order: e.target.value})}
-                placeholder="gemini,ollama,huggingface,groq,openai"
+                placeholder="gemini,ollama,huggingface,groq,openai,nvidia"
                 className="w-full bg-slate-900 border border-slate-800 rounded px-3 py-2 text-sm font-mono focus:outline-none focus:border-emerald-500"
               />
               <p className="text-[10px] text-slate-500 leading-normal">Comma-separated list prioritising failover order if endpoints fail.</p>
@@ -273,6 +275,7 @@ function ProviderFormCard({ provider, onSave }: { provider: any; onSave: (vals: 
       case 'huggingface': return 'border-amber-500/30 text-amber-300 bg-amber-500/10';
       case 'groq': return 'border-rose-500/30 text-rose-300 bg-rose-500/10';
       case 'ollama': return 'border-cyan-500/30 text-cyan-300 bg-cyan-500/10';
+      case 'nvidia': return 'border-green-500/30 text-green-300 bg-green-500/10';
       default: return 'border-slate-500/30 text-slate-300 bg-slate-500/10';
     }
   };

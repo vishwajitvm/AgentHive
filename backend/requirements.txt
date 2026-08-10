@@ -47,3 +47,6 @@ sumy
 pytest
 pytest-asyncio
 pytest-cov
+
+slowapi
+limits
