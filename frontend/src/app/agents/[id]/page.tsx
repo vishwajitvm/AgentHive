@@ -1,5 +1,7 @@
 'use client';
 
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { getAgent, runAgent, getRunSteps, uploadToWorkspace } from '../../../lib/api';
@@ -32,6 +34,7 @@ export default function AgentConsolePage() {
   const [result, setResult] = useState<any>(null);
   const [trace, setTrace] = useState<any>({ steps: [], tool_calls: [] });
   const [error, setError] = useState('');
+  const [showLogs, setShowLogs] = useState(false);
   
   // Context variables
   const [sessionContext, setSessionContext] = useState('');
@@ -73,10 +76,17 @@ export default function AgentConsolePage() {
     setError('');
 
     try {
-      // Inject session context if present
-      const finalQuery = sessionContext.trim() 
-        ? `[SYSTEM SECRETS/CONTEXT FOR THIS SESSION]:\n${sessionContext}\n\n[USER INSTRUCTION]:\n${query}` 
-        : query;
+      // Inject session context and uploaded file context
+      let contextStr = "";
+      if (sessionContext.trim()) {
+          contextStr += `[SYSTEM SECRETS/CONTEXT FOR THIS SESSION]:\n${sessionContext}\n\n`;
+      }
+      if (uploadStatus && uploadStatus.startsWith("Uploaded:")) {
+          const filename = uploadStatus.replace("Uploaded: ", "");
+          contextStr += `[WORKSPACE FILES UPLOADED FOR THIS RUN]:\n- ${filename}\n\n`;
+      }
+      
+      const finalQuery = contextStr ? `${contextStr}[USER INSTRUCTION]:\n${query}` : query;
 
       const data = await runAgent(agentId, finalQuery, false);
       setResult(data);
@@ -110,7 +120,16 @@ export default function AgentConsolePage() {
           </div>
           <div>
             <h2 className="text-2xl font-bold">{agent?.name}</h2>
-            <p className="text-slate-400 text-xs mt-0.5 capitalize">{agent?.agent_type.replace('_', ' ')} Registry Profile</p>
+            <p className="text-slate-400 text-xs mt-0.5 capitalize mb-2">{agent?.agent_type.replace('_', ' ')} Registry Profile</p>
+            {agent?.description && (
+              <p className="text-slate-300 text-sm max-w-2xl">{agent.description}</p>
+            )}
+            {agent?.how_to_use && (
+              <div className="mt-2 text-slate-400 text-xs">
+                <span className="font-semibold text-slate-300">How to use:</span>
+                <p className="whitespace-pre-wrap">{agent.how_to_use}</p>
+              </div>
+            )}
           </div>
         </div>
 
@@ -118,12 +137,6 @@ export default function AgentConsolePage() {
           Back to list
         </Link>
       </div>
-
-      {error && (
-        <div className="p-4 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-400 text-sm font-semibold">
-          {error}
-        </div>
-      )}
 
       {/* Main console layout */}
       <div className="grid lg:grid-cols-5 gap-8">
@@ -135,13 +148,34 @@ export default function AgentConsolePage() {
             </h3>
             
             <form onSubmit={handleRun} className="space-y-4">
+              {/* Context & File Upload Inline */}
+              <div className="pt-2 border-t border-slate-900">
+                {/* File Upload */}
+                {agent?.allow_uploads && (
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-semibold text-slate-400 block uppercase tracking-wider">Workspace Upload</label>
+                    <div className="flex flex-col gap-2">
+                      <label className="cursor-pointer bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 text-xs py-2 px-4 rounded flex items-center justify-center gap-2 transition-colors">
+                        <UploadCloud size={14} /> {uploading ? 'Uploading...' : 'Upload Document'}
+                        <input type="file" className="hidden" onChange={handleFileUpload} disabled={uploading} />
+                      </label>
+                      {uploadStatus && (
+                        <span className="text-[10px] font-mono text-emerald-400 flex items-center gap-1">
+                          <FileText size={10} /> {uploadStatus}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+
               <textarea 
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Instruct the agent (e.g. 'Search for recent facts about FastAPI and summarize them in a markdown file called fastapi.md')"
                 rows={4}
                 disabled={running}
-                className="w-full bg-slate-900 border border-slate-800 rounded p-3 text-sm focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+                className="w-full bg-slate-900 border border-slate-800 rounded p-3 text-sm focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 mt-2"
               />
 
               <button 
@@ -152,41 +186,6 @@ export default function AgentConsolePage() {
                 <Play size={14} fill="currentColor" /> {running ? 'Running Agent Loop...' : 'Execute Loop'}
               </button>
             </form>
-          </div>
-
-          {/* Context & File Upload */}
-          <div className="rounded-xl border border-slate-900 bg-slate-950/20 p-6 space-y-5">
-            <h3 className="font-bold text-sm flex items-center gap-2 text-slate-300 border-b border-slate-900 pb-2">
-              <Shield size={16} className="text-sky-400" /> Workspace Context & Secrets
-            </h3>
-            
-            {/* File Upload */}
-            <div className="space-y-2">
-              <label className="text-xs font-semibold text-slate-400 block">Upload Document to Workspace</label>
-              <div className="flex items-center gap-3">
-                <label className="cursor-pointer bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 text-xs py-2 px-4 rounded-lg flex items-center gap-2 transition-colors">
-                  <UploadCloud size={14} /> {uploading ? 'Uploading...' : 'Choose File'}
-                  <input type="file" className="hidden" onChange={handleFileUpload} disabled={uploading} />
-                </label>
-                {uploadStatus && (
-                  <span className="text-[10px] font-mono text-emerald-400 flex items-center gap-1">
-                    <FileText size={10} /> {uploadStatus}
-                  </span>
-                )}
-              </div>
-            </div>
-
-            {/* Session Secrets */}
-            <div className="space-y-2">
-              <label className="text-xs font-semibold text-slate-400 block">Temporary Session Secrets (e.g. Passwords, API Keys)</label>
-              <textarea 
-                value={sessionContext}
-                onChange={(e) => setSessionContext(e.target.value)}
-                placeholder="Paste account credentials or context here. This is securely injected into the agent's memory for this run only."
-                rows={2}
-                className="w-full bg-slate-900 border border-slate-800 rounded p-2 text-xs font-mono focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500 text-slate-300"
-              />
-            </div>
           </div>
 
           {/* Configuration profile snapshot */}
@@ -215,12 +214,12 @@ export default function AgentConsolePage() {
 
         {/* Right Side: Observability trace timeline */}
         <div className="lg:col-span-3 space-y-6">
-          <div className="rounded-xl border border-slate-900 bg-slate-950/30 p-6 min-h-[400px] flex flex-col justify-between">
+          <div className="rounded-xl border border-slate-900 bg-slate-950/30 p-6 min-h-[400px] flex flex-col justify-between shadow-sm">
             {/* Trace logs header */}
-            <div className="space-y-6 flex-1">
+            <div className="space-y-6 flex-1 flex flex-col">
               <div className="flex justify-between items-center border-b border-slate-900 pb-3">
                 <h3 className="font-bold text-base flex items-center gap-2 text-slate-300">
-                  <Activity size={18} className="text-emerald-400" /> Observability Trace logs
+                  <Activity size={18} className="text-emerald-400" /> Execution Results
                 </h3>
                 {running && (
                   <span className="text-xs text-emerald-400 font-semibold flex items-center gap-1.5 animate-pulse">
@@ -230,32 +229,68 @@ export default function AgentConsolePage() {
               </div>
 
               {/* Steps display */}
-              <div className="space-y-6 max-h-[500px] overflow-y-auto pr-2">
-                {trace.steps && trace.steps.length > 0 && (
-                  <TraceDiagram steps={trace.steps} />
-                )}
-
-                {/* Final response card */}
-                {result && (
-                  <div className="p-5 rounded-xl border border-emerald-500/20 bg-emerald-500/5 space-y-3">
-                    <div className="flex justify-between items-center border-b border-emerald-500/10 pb-2">
-                      <h4 className="text-sm font-bold text-emerald-400 flex items-center gap-1.5">
-                        <CheckCircle size={16} /> Final Answer Resolved
-                      </h4>
-                      <span className="text-[10px] text-slate-400 flex items-center gap-1">
-                        <Clock size={10} /> {result.elapsed_seconds}s elapsed
-                      </span>
-                    </div>
-                    <p className="text-sm text-slate-200 leading-relaxed font-medium whitespace-pre-wrap">{result.output}</p>
-                  </div>
-                )}
-
-                {!running && trace.steps.length === 0 && !result && (
-                  <div className="text-center py-20 text-slate-600 space-y-2">
+              <div className="flex-1 flex flex-col space-y-6">
+                {!running && trace.steps.length === 0 && !result && !error && (
+                  <div className="flex-1 flex flex-col items-center justify-center text-center py-20 text-slate-600 space-y-2">
                     <Cpu size={32} className="mx-auto text-slate-800" />
                     <p className="text-sm">Submit an instruction to start the reasoning agent loop.</p>
                   </div>
                 )}
+
+                {error && (
+                  <div className="p-5 rounded-xl border border-rose-500/20 bg-rose-500/10 space-y-3 shadow-lg">
+                     <h4 className="text-sm font-bold text-rose-400 flex items-center gap-1.5">
+                       <AlertTriangle size={16} /> Execution Failed
+                     </h4>
+                     <p className="text-sm text-slate-200 leading-relaxed font-medium">{error}</p>
+                  </div>
+                )}
+
+                {/* Final response card */}
+                {result && (
+                  <div className="p-5 rounded-xl border border-emerald-500/20 bg-emerald-500/5 space-y-3 shadow-lg transform transition-all duration-500 ease-in-out">
+                    <div className="flex justify-between items-center border-b border-emerald-500/10 pb-2">
+                      <h4 className="text-sm font-bold text-emerald-400 flex items-center gap-1.5">
+                        <CheckCircle size={16} /> Final Answer Resolved
+                      </h4>
+                      <span className="text-[10px] text-slate-400 flex items-center gap-1 bg-slate-900 px-2.5 py-1 rounded-full border border-slate-800 shadow-inner">
+                        <Clock size={10} className="text-emerald-400" /> {result.elapsed_seconds}s elapsed
+                      </span>
+                    </div>
+                    <div className="text-sm text-slate-200 leading-relaxed font-medium mt-3 bg-slate-900/50 p-4 rounded border border-emerald-500/20 prose prose-invert prose-emerald max-w-none">
+                      <ReactMarkdown 
+                        remarkPlugins={[remarkGfm]}
+                      >
+                        {result.output || result.error || "Execution completed without output."}
+                      </ReactMarkdown>
+                    </div>
+                  </div>
+                )}
+
+                {/* Button to toggle logs */}
+                {(trace?.steps?.length > 0) && (
+                  <div className="border-t border-slate-900 pt-4 mt-auto">
+                    <button 
+                      onClick={() => setShowLogs(!showLogs)}
+                      type="button"
+                      className="w-full py-3 rounded-lg bg-slate-900/80 hover:bg-slate-800 border border-slate-800 hover:border-slate-700 text-slate-300 font-semibold text-sm flex items-center justify-center gap-2 transition-all duration-200 shadow-sm"
+                    >
+                      <Terminal size={16} className={showLogs ? "text-emerald-400" : "text-slate-500"} /> 
+                      {showLogs ? 'Hide Observability Trace Logs' : 'View Observability Trace Logs'}
+                    </button>
+                  </div>
+                )}
+
+                {/* Logs Area with transition */}
+                <div 
+                  className={`overflow-hidden transition-all duration-500 ease-in-out ${showLogs ? 'max-h-[800px] opacity-100' : 'max-h-0 opacity-0'}`}
+                >
+                  <div className="space-y-6 max-h-[600px] overflow-y-auto pr-2">
+                    {trace.steps && trace.steps.length > 0 && (
+                      <TraceDiagram steps={trace.steps} />
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
           </div>

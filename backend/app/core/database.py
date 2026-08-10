@@ -27,7 +27,6 @@ async def get_db():
     async with AsyncSessionLocal() as session:
         try:
             yield session
-            await session.commit()
         except Exception:
             await session.rollback()
             raise
@@ -42,8 +41,7 @@ async def init_db():
             logger.info("Initializing pgvector database extension...")
             await conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector;"))
             
-            # Import models to ensure they are registered on Base
-            from app.core.models import User, Secret, AuditLog
+            from app.core.models import User, Secret, AuditLog, UserSession, UserToolCredential
             from app.agents.models import Agent, AgentVersion, Prompt, PromptVersion
             from app.llm.models import ModelProvider, ModelPolicy
             from app.workflows.models import Workflow, WorkflowRun, WorkflowStep

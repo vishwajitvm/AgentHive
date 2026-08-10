@@ -1,10 +1,16 @@
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Depends
 from fastapi.middleware.cors import CORSMiddleware
+from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
+from slowapi import _rate_limit_exceeded_handler
+
 from app.core.config import settings
 from app.logging.logger import configure_logging, get_logger
 from app.core.database import init_db
 from app.agents.registry import initialize_agents
 from app.core.exceptions import AgentHiveException, agenthive_exception_handler
+from app.core.limiter import limiter
+from app.core.auth import get_current_user
 
 # Import Routers
 from app.api.health import router as health_router
@@ -14,14 +20,26 @@ from app.api.routes.workflows import router as workflows_router
 from app.api.routes.logs import router as logs_router
 from app.api.routes.settings import router as settings_router
 from app.api.routes.tools import router as tools_router
+from app.api.routes.auth import router as auth_router
 
 import time
 import uuid
+from tracenest.fastapi.middleware import TraceNestMiddleware
+from tracenest.ui.router import router as tracenest_router
 
 configure_logging()
 logger = get_logger(__name__)
 
 app = FastAPI(title="AgentHive API", version="0.1.0")
+
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+# Add Tracenest middleware for comprehensive API logging
+app.add_middleware(TraceNestMiddleware)
+
+# Add Rate Limit middleware
+app.add_middleware(SlowAPIMiddleware)
 
 app.add_middleware(
     CORSMiddleware,
@@ -45,8 +63,6 @@ async def startup_event():
         from app.tools.seeder import seed_tools
         await seed_tools(db)
         await initialize_agents(db)
-        from app.agents.seeder import seed_new_agents
-        await seed_new_agents(db)
         
     logger.info("AgentHive API service has successfully started.")
 
@@ -79,11 +95,43 @@ async def request_logging_middleware(request: Request, call_next):
         )
         raise
 
+from app.api.routes.orchestrator import router as orchestrator_router
+
 # Register Routers
 app.include_router(health_router)
-app.include_router(agents_router, prefix="/api")
-app.include_router(models_router, prefix="/api")
-app.include_router(workflows_router, prefix="/api")
-app.include_router(logs_router, prefix="/api")
-app.include_router(settings_router, prefix="/api")
-app.include_router(tools_router, prefix="/api")
+app.include_router(auth_router, prefix="/api/auth")
+
+# Protected Routers
+protected_deps = [Depends(get_current_user)]
+app.include_router(agents_router, prefix="/api", dependencies=protected_deps)
+app.include_router(models_router, prefix="/api", dependencies=protected_deps)
+app.include_router(workflows_router, prefix="/api", dependencies=protected_deps)
+app.include_router(logs_router, prefix="/api", dependencies=protected_deps)
+app.include_router(settings_router, prefix="/api", dependencies=protected_deps)
+app.include_router(tools_router, prefix="/api", dependencies=protected_deps)
+app.include_router(orchestrator_router, prefix="/api", dependencies=protected_deps)
+
+# Tracenest UI Router
+import tracenest.ui.router
+from pathlib import Path
+# Force tracenest to look at the workspace root equivalent inside docker
+# If the root isn't mounted to the backend, it can't read it. 
+# Wait! /app is mapped to ./backend. It CANNOT read ../TraceNestLogs unless we mount it!
+app.include_router(tracenest_router, prefix="")
+
+try:
+    from app.api.routes.upload import router as upload_router
+    app.include_router(upload_router, prefix="/api", dependencies=protected_deps)
+except ImportError:
+    logger.warning("Upload router not found.")
+
+try:
+    from prometheus_fastapi_instrumentator import Instrumentator
+    Instrumentator().instrument(app).expose(app)
+    logger.info("Prometheus metrics endpoint exposed at /metrics")
+except ImportError:
+    logger.warning("prometheus-fastapi-instrumentator not installed, /metrics will 404")
+
+@app.get("/")
+async def root():
+    return {"status": "ok", "service": "AgentHive API", "docs": "/docs"}

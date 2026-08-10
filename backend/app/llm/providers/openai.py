@@ -5,7 +5,15 @@ from app.logging.logger import get_logger
 logger = get_logger(__name__)
 
 class OpenAIProvider(BaseLLMProvider):
-    """OpenAI and custom OpenAI-compatible provider adapter."""
+    """OpenAI API provider adapter."""
+    fallback_models = [
+        "gpt-4o",
+        "gpt-4o-mini",
+        "o1-preview",
+        "o1-mini",
+        "gpt-4-turbo",
+        "gpt-3.5-turbo"
+    ]
 
     async def generate(
         self,

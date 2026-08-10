@@ -36,6 +36,10 @@ class PolicyPayload(BaseModel):
 async def list_providers(db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(ModelProvider).order_by(ModelProvider.provider_name))
     providers = result.scalars().all()
+    
+    from app.llm.router import LLMRouter
+    router_instance = LLMRouter()
+    
     # Mask secret references for safety
     serialized = []
     for prov in providers:
@@ -43,6 +47,13 @@ async def list_providers(db: AsyncSession = Depends(get_db)):
         item.pop("_sa_instance_state", None)
         item["has_key"] = prov.api_key_secret_id is not None
         item.pop("api_key_secret_id", None)
+        
+        adapter = router_instance.providers.get(prov.provider_type.lower())
+        if adapter:
+            item["available_models"] = getattr(adapter, 'fallback_models', [prov.default_model])
+        else:
+            item["available_models"] = [prov.default_model]
+            
         serialized.append(item)
     return serialized
 

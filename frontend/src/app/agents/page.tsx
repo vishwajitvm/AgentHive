@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { listAgents, deleteAgent } from '../../lib/api';
+import { listAgents, deleteAgent, reorderAgents } from '../../lib/api';
 import { 
   Bot, 
   Trash2, 
@@ -14,6 +14,9 @@ import {
   BookOpen
 } from 'lucide-react';
 import Link from 'next/link';
+import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
+import { arrayMove, SortableContext, sortableKeyboardCoordinates, rectSortingStrategy } from '@dnd-kit/sortable';
+import { SortableAgentCard } from './SortableAgentCard';
 
 export default function AgentsListPage() {
   const [agents, setAgents] = useState<any[]>([]);
@@ -21,6 +24,17 @@ export default function AgentsListPage() {
   const [message, setMessage] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedAgent, setSelectedAgent] = useState<any>(null);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 5,
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
 
   const fetchAgents = async () => {
     try {
@@ -45,9 +59,54 @@ export default function AgentsListPage() {
     }
   };
 
+  const [isAdmin, setIsAdmin] = useState(false);
+
   useEffect(() => {
     fetchAgents();
+    
+    // Check admin status from JWT
+    const token = document.cookie
+      .split('; ')
+      .find(row => row.startsWith('agenthive_token='))
+      ?.split('=')[1];
+      
+    if (token) {
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        const roles = payload.resource_access?.['agenthive-frontend']?.roles || [];
+        if (roles.includes('admin') || roles.includes('super_admin')) {
+          setIsAdmin(true);
+        }
+      } catch (e) {
+        console.error('Failed to parse token');
+      }
+    }
   }, []);
+
+  const handleDragEnd = async (event: any) => {
+    const { active, over } = event;
+
+    if (active.id !== over?.id) {
+      setAgents((items) => {
+        const oldIndex = items.findIndex((item) => item.id === active.id);
+        const newIndex = items.findIndex((item) => item.id === over.id);
+        
+        const newItems = arrayMove(items, oldIndex, newIndex);
+        
+        // Update order_index
+        const reordered = newItems.map((item, idx) => ({
+          ...item,
+          order_index: idx
+        }));
+        
+        // Save to backend asynchronously
+        reorderAgents(reordered.map(r => ({ id: r.id, order_index: r.order_index })))
+          .catch(err => console.error("Failed to reorder", err));
+
+        return reordered;
+      });
+    }
+  };
 
   const filteredAgents = agents.filter(a => 
     a.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
@@ -72,9 +131,11 @@ export default function AgentsListPage() {
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full md:w-64 bg-slate-900 border border-slate-800 text-slate-200 text-sm rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
           />
-          <Link href="/agents/create" className="whitespace-nowrap px-4 py-2.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-sm flex items-center gap-2 transition-all shadow-lg shadow-emerald-500/10">
-            <Plus size={16} /> Create New Agent
-          </Link>
+          {isAdmin && (
+            <Link href="/agents/create" className="whitespace-nowrap px-4 py-2.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-sm flex items-center gap-2 transition-all shadow-lg shadow-emerald-500/10">
+              <Plus size={16} /> Create New Agent
+            </Link>
+          )}
         </div>
       </div>
 
@@ -85,92 +146,37 @@ export default function AgentsListPage() {
       )}
 
       {/* Grid of Agents */}
-      <div className="grid md:grid-cols-3 gap-6">
-        {filteredAgents.map((agent) => (
-          <div key={agent.id} className="rounded-xl border border-slate-900 bg-slate-950/40 p-6 flex flex-col justify-between hover:border-slate-800 transition-all duration-300">
-            <div className="space-y-4">
-              {/* Header card */}
-              <div className="flex justify-between items-start">
-                <div className="p-3 rounded-lg bg-slate-900 border border-slate-800 text-emerald-400">
-                  <Bot size={24} />
-                </div>
-                
-                <div className="flex flex-col items-end gap-1">
-                  <span className={`text-[10px] px-2 py-0.5 rounded font-semibold ${
-                    agent.status === 'active' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
-                  }`}>
-                    {agent.status.toUpperCase()}
-                  </span>
-                  {agent.model_policy_id ? (
-                    <span className="text-[9px] bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 px-1.5 py-0.5 rounded">Custom Model</span>
-                  ) : (
-                    <span className="text-[9px] bg-slate-800 text-slate-400 border border-slate-700 px-1.5 py-0.5 rounded">Default Router</span>
-                  )}
-                </div>
-              </div>
+      <DndContext 
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragEnd={handleDragEnd}
+      >
+        <div className="grid md:grid-cols-3 gap-6">
+          <SortableContext 
+            items={filteredAgents.map(a => a.id)}
+            strategy={rectSortingStrategy}
+          >
+            {filteredAgents.map((agent) => (
+              <SortableAgentCard 
+                key={agent.id} 
+                agent={agent} 
+                setSelectedAgent={setSelectedAgent}
+                handleDelete={handleDelete}
+              />
+            ))}
+          </SortableContext>
 
-              {/* Title & Description */}
-              <div>
-                <h3 className="font-bold text-lg leading-tight">{agent.name}</h3>
-                <p className="text-[10px] text-slate-400 font-bold mt-1 uppercase tracking-widest">{agent.agent_type.replace('_', ' ')}</p>
-                <p className="text-xs text-slate-400 mt-3 line-clamp-3 leading-relaxed">{agent.description || 'No description provided.'}</p>
-              </div>
-
-              {/* Tools enabled */}
+          {filteredAgents.length === 0 && !loading && (
+            <div className="col-span-full text-center py-20 border border-dashed border-slate-900 rounded-2xl space-y-4">
+              <Bot size={48} className="text-slate-700 mx-auto" />
               <div className="space-y-1">
-                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Permitted Tools ({agent.tools_enabled.length})</p>
-                <div className="flex flex-wrap gap-1.5 mt-2 max-h-16 overflow-y-auto pr-1 custom-scrollbar">
-                  {agent.tools_enabled.map((t: string) => (
-                    <span key={t} className="text-[10px] px-1.5 py-0.5 rounded bg-slate-900 text-slate-300 border border-slate-800/80">
-                      {t.replace('_', ' ')}
-                    </span>
-                  ))}
-                  {agent.tools_enabled.length === 0 && (
-                    <span className="text-[10px] text-slate-500 italic">No tools authorized.</span>
-                  )}
-                </div>
+                <p className="font-bold text-slate-300">No agents found</p>
+                <p className="text-sm text-slate-500">Try adjusting your search or create a new agent.</p>
               </div>
             </div>
-
-            {/* Actions */}
-            <div className="flex items-center justify-between border-t border-slate-900/60 pt-4 mt-6">
-              <div className="flex gap-2">
-                <button 
-                  onClick={() => setSelectedAgent(agent)}
-                  className="px-3 py-1.5 rounded bg-sky-500/10 border border-sky-500/20 hover:bg-sky-500/20 text-sky-400 font-bold text-xs flex items-center gap-1.5 transition-all"
-                >
-                  <BookOpen size={12} fill="currentColor" /> How to Use
-                </button>
-                <Link href={`/agents/${agent.id}`} className="px-3.5 py-1.5 rounded bg-emerald-500/10 border border-emerald-500/20 hover:bg-emerald-500/20 text-emerald-400 font-bold text-xs flex items-center gap-1.5 transition-all">
-                  <Play size={12} fill="currentColor" /> Chat & Run
-                </Link>
-              </div>
-              
-              <div className="flex items-center gap-2">
-                <Link href={`/agents/edit/${agent.id}`} className="p-1.5 rounded hover:bg-slate-800 text-slate-500 hover:text-slate-300 transition-colors">
-                  <Settings size={16} />
-                </Link>
-                <button 
-                  onClick={() => handleDelete(agent.id)}
-                  className="p-1.5 rounded hover:bg-rose-500/10 text-slate-500 hover:text-rose-400 transition-colors"
-                >
-                  <Trash2 size={16} />
-                </button>
-              </div>
-            </div>
-          </div>
-        ))}
-
-        {filteredAgents.length === 0 && !loading && (
-          <div className="col-span-full text-center py-20 border border-dashed border-slate-900 rounded-2xl space-y-4">
-            <Bot size={48} className="text-slate-700 mx-auto" />
-            <div className="space-y-1">
-              <p className="font-bold text-slate-300">No agents found</p>
-              <p className="text-sm text-slate-500">Try adjusting your search or create a new agent.</p>
-            </div>
-          </div>
-        )}
-      </div>
+          )}
+        </div>
+      </DndContext>
 
       {/* How to Use Modal */}
       {selectedAgent && (
@@ -204,29 +210,37 @@ export default function AgentsListPage() {
 
               {/* Step by Step */}
               <div className="space-y-3">
-                <h4 className="text-sm font-bold text-slate-300 uppercase tracking-wider">How to Use (Step by Step)</h4>
+                <h4 className="text-sm font-bold text-slate-300 uppercase tracking-wider">How to Use (Instructions)</h4>
                 <div className="space-y-3">
-                  <div className="flex gap-3 items-start bg-slate-950/30 p-3 rounded-lg border border-slate-800/50">
-                    <div className="bg-slate-800 text-slate-300 w-6 h-6 rounded flex items-center justify-center font-bold text-xs shrink-0">1</div>
-                    <div>
-                      <p className="text-sm text-slate-300 font-semibold">Open the Agent Console</p>
-                      <p className="text-xs text-slate-500 mt-1">Click the "Chat & Run" button on the agent's card to enter their dedicated workspace console.</p>
+                  {selectedAgent.how_to_use ? (
+                    <p className="text-sm text-slate-400 leading-relaxed bg-slate-950/30 p-4 rounded-lg border border-slate-800 whitespace-pre-wrap">
+                      {selectedAgent.how_to_use}
+                    </p>
+                  ) : (
+                    <div className="space-y-3">
+                      <div className="flex gap-3 items-start bg-slate-950/30 p-3 rounded-lg border border-slate-800/50">
+                        <div className="bg-slate-800 text-slate-300 w-6 h-6 rounded flex items-center justify-center font-bold text-xs shrink-0">1</div>
+                        <div>
+                          <p className="text-sm text-slate-300 font-semibold">Open the Agent Console</p>
+                          <p className="text-xs text-slate-500 mt-1">Click the "Chat & Run" button on the agent's card to enter their dedicated workspace console.</p>
+                        </div>
+                      </div>
+                      <div className="flex gap-3 items-start bg-slate-950/30 p-3 rounded-lg border border-slate-800/50">
+                        <div className="bg-slate-800 text-slate-300 w-6 h-6 rounded flex items-center justify-center font-bold text-xs shrink-0">2</div>
+                        <div>
+                          <p className="text-sm text-slate-300 font-semibold">Provide an Instruction</p>
+                          <p className="text-xs text-slate-500 mt-1">Type your goal into the input box. The agent is initialized with a specific <span className="text-emerald-400 font-mono">system_prompt</span> so you don't need to over-explain context.</p>
+                        </div>
+                      </div>
+                      <div className="flex gap-3 items-start bg-slate-950/30 p-3 rounded-lg border border-slate-800/50">
+                        <div className="bg-slate-800 text-slate-300 w-6 h-6 rounded flex items-center justify-center font-bold text-xs shrink-0">3</div>
+                        <div>
+                          <p className="text-sm text-slate-300 font-semibold">Monitor the Reasoning Trace</p>
+                          <p className="text-xs text-slate-500 mt-1">Watch the right-side panel to see the agent think, call its authorized tools, and arrive at a final answer within its {selectedAgent.max_steps}-step limit.</p>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                  <div className="flex gap-3 items-start bg-slate-950/30 p-3 rounded-lg border border-slate-800/50">
-                    <div className="bg-slate-800 text-slate-300 w-6 h-6 rounded flex items-center justify-center font-bold text-xs shrink-0">2</div>
-                    <div>
-                      <p className="text-sm text-slate-300 font-semibold">Provide an Instruction</p>
-                      <p className="text-xs text-slate-500 mt-1">Type your goal into the input box. The agent is initialized with a specific <span className="text-emerald-400 font-mono">system_prompt</span> so you don't need to over-explain context.</p>
-                    </div>
-                  </div>
-                  <div className="flex gap-3 items-start bg-slate-950/30 p-3 rounded-lg border border-slate-800/50">
-                    <div className="bg-slate-800 text-slate-300 w-6 h-6 rounded flex items-center justify-center font-bold text-xs shrink-0">3</div>
-                    <div>
-                      <p className="text-sm text-slate-300 font-semibold">Monitor the Reasoning Trace</p>
-                      <p className="text-xs text-slate-500 mt-1">Watch the right-side panel to see the agent think, call its authorized tools, and arrive at a final answer within its {selectedAgent.max_steps}-step limit.</p>
-                    </div>
-                  </div>
+                  )}
                 </div>
               </div>
 

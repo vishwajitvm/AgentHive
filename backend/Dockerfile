@@ -2,7 +2,14 @@ FROM python:3.11-slim AS base
 WORKDIR /app
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
-RUN apt-get update && apt-get install -y --no-install-recommends build-essential curl && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    curl \
+    git \
+    tesseract-ocr \
+    poppler-utils \
+    libmagic1 \
+    && rm -rf /var/lib/apt/lists/*
 COPY requirements.txt ./
 
 FROM base AS dev

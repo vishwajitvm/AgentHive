@@ -15,10 +15,12 @@ export default function CreateAgentPage() {
     name: '',
     slug: '',
     description: '',
+    how_to_use: '',
     agent_type: 'personal_assistant',
     prompt_content: '',
     tools_enabled: [] as string[],
     memory_enabled: true,
+    allow_uploads: false,
     max_steps: 10,
     timeout_seconds: 120
   });
@@ -126,6 +128,17 @@ export default function CreateAgentPage() {
             </div>
             
             <div className="space-y-1">
+              <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">How to Use (Instructions)</label>
+              <textarea 
+                value={form.how_to_use} 
+                onChange={(e) => setForm({...form, how_to_use: e.target.value})}
+                placeholder="Explain what this is for, steps to follow, and the type of response you'll get..."
+                rows={3}
+                className="w-full bg-slate-900 border border-slate-800 rounded px-3 py-2 text-sm focus:outline-none focus:border-emerald-500"
+              />
+            </div>
+            
+            <div className="space-y-1">
               <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Agent Type</label>
               <select 
                 value={form.agent_type}
@@ -217,6 +230,16 @@ export default function CreateAgentPage() {
                 className="rounded text-emerald-500 focus:ring-emerald-500"
               />
               <span className="text-xs font-semibold">Enable pgvector Memory</span>
+            </label>
+
+            <label className="flex items-center gap-3 cursor-pointer mt-4">
+              <input 
+                type="checkbox"
+                checked={form.allow_uploads}
+                onChange={(e) => setForm({...form, allow_uploads: e.target.checked})}
+                className="rounded text-emerald-500 focus:ring-emerald-500"
+              />
+              <span className="text-xs font-semibold">Enable Workspace Uploads</span>
             </label>
           </div>
 

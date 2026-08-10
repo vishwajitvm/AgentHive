@@ -1,0 +1,272 @@
+/* Premium Dark Theme for Keycloak / AgentHive */
+
+body, .pf-c-login, .login-pf body, html {
+    background-color: #020617 !important;
+    background-image: none !important;
+    font-family: ui-sans-serif, system-ui, -apple-system, sans-serif !important;
+    color: #f8fafc !important;
+}
+
+/* Container & Card */
+.pf-c-login__container, .login-pf-page {
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: center !important;
+    align-items: center !important;
+    min-height: 100vh !important;
+    background-color: #020617 !important;
+}
+
+.pf-c-login__main, .card-pf {
+    background-color: #0f172a !important;
+    border: 1px solid #1e293b !important;
+    border-radius: 1rem !important;
+    box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5) !important;
+    padding: 2.5rem 2rem !important;
+    width: 100% !important;
+    max-width: 440px !important;
+    margin: 0 auto !important;
+}
+
+/* Typography & Headers */
+.pf-c-login__header {
+    text-align: center !important;
+    margin-bottom: 2rem !important;
+}
+
+#kc-header-wrapper {
+    color: #f8fafc !important;
+    font-size: 2.25rem !important;
+    font-weight: 800 !important;
+    letter-spacing: -0.025em !important;
+    text-transform: none !important;
+}
+
+.pf-c-title, #kc-page-title {
+    color: #f8fafc !important;
+    font-size: 1.5rem !important;
+    font-weight: 700 !important;
+    margin-bottom: 2rem !important;
+    text-align: center !important;
+}
+
+/* Disable PF pseudo borders completely */
+*, *::before, *::after {
+    border-width: 0;
+    border-style: solid;
+    border-color: #1e293b;
+}
+.pf-c-form-control::after,
+.pf-c-form-control::before,
+.pf-c-button.pf-m-control::after,
+.pf-c-button.pf-m-control::before {
+    display: none !important;
+}
+
+/* Labels */
+.pf-c-form__label {
+    color: #94a3b8 !important;
+    font-size: 0.75rem !important;
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.05em !important;
+    margin-bottom: 0.5rem !important;
+    display: block !important;
+}
+
+/* Normal Input Controls */
+.pf-c-form-control, .form-control {
+    background-color: #020617 !important;
+    border: 1px solid #1e293b !important;
+    color: #f8fafc !important;
+    border-radius: 0.5rem !important;
+    padding: 0.75rem 1rem !important;
+    font-size: 0.875rem !important;
+    width: 100% !important;
+    transition: all 0.2s ease !important;
+    box-shadow: none !important;
+}
+
+.pf-c-form-control:focus, .form-control:focus {
+    border-color: #10b981 !important;
+    box-shadow: 0 0 0 1px #10b981 !important;
+    outline: none !important;
+}
+
+/* Input Group (Password Toggle) */
+.pf-c-input-group {
+    background-color: #020617 !important;
+    border: 1px solid #1e293b !important;
+    border-radius: 0.5rem !important;
+    display: flex !important;
+    align-items: stretch !important;
+    overflow: hidden !important;
+    transition: all 0.2s ease !important;
+    width: 100% !important;
+}
+
+.pf-c-input-group:focus-within {
+    border-color: #10b981 !important;
+    box-shadow: 0 0 0 1px #10b981 !important;
+}
+
+/* Remove borders from inputs INSIDE a group */
+.pf-c-input-group .pf-c-form-control {
+    border: none !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    flex-grow: 1 !important;
+    width: 100% !important;
+}
+
+/* Style the eye icon button */
+.pf-c-input-group .pf-c-button.pf-m-control {
+    background-color: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    color: #94a3b8 !important;
+    padding: 0 1rem !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    margin: 0 !important;
+}
+
+.pf-c-input-group .pf-c-button.pf-m-control:hover {
+    color: #10b981 !important;
+}
+
+/* Form Spacing */
+.form-group {
+    margin-bottom: 1.5rem !important;
+}
+
+/* Primary Submit Button */
+.pf-c-button.pf-m-primary, .btn-primary {
+    background-color: #10b981 !important;
+    border: none !important;
+    color: #020617 !important;
+    font-weight: 700 !important;
+    border-radius: 0.5rem !important;
+    padding: 0.875rem !important;
+    font-size: 0.875rem !important;
+    text-transform: none !important;
+    transition: all 0.2s ease !important;
+    width: 100% !important;
+    margin-top: 1rem !important;
+    cursor: pointer !important;
+}
+
+.pf-c-button.pf-m-primary:hover, .btn-primary:hover {
+    background-color: #34d399 !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 0 10px 15px -3px rgba(16, 185, 129, 0.2) !important;
+}
+
+/* Social Buttons (Google) */
+.kc-social-links {
+    list-style: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    width: 100% !important;
+}
+.kc-social-links li {
+    width: 100% !important;
+}
+#social-google, .zocial {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 0.75rem !important;
+    background-color: #020617 !important;
+    border: 1px solid #1e293b !important;
+    color: #f8fafc !important;
+    border-radius: 0.5rem !important;
+    padding: 0.875rem !important;
+    font-weight: 600 !important;
+    font-size: 0.875rem !important;
+    text-decoration: none !important;
+    width: 100% !important;
+    transition: all 0.2s ease !important;
+    cursor: pointer !important;
+}
+
+#social-google:hover, .zocial:hover {
+    background-color: #1e293b !important;
+    border-color: #10b981 !important;
+    color: #10b981 !important;
+}
+
+/* Divider OR */
+.pf-c-divider, #kc-social-providers h2 {
+    border-top: 1px solid #1e293b !important;
+    margin: 2rem 0 !important;
+    position: relative !important;
+    text-align: center !important;
+    font-size: 0 !important;
+    border-bottom: none !important;
+}
+.pf-c-divider::after, #kc-social-providers h2::after {
+    content: "OR SIGN IN WITH";
+    position: absolute !important;
+    top: 50% !important;
+    left: 50% !important;
+    transform: translate(-50%, -50%) !important;
+    background: #0f172a !important;
+    padding: 0 1rem !important;
+    color: #94a3b8 !important;
+    font-size: 0.75rem !important;
+    font-weight: 700 !important;
+}
+
+/* Misc Text & Links */
+a {
+    color: #10b981 !important;
+    text-decoration: none !important;
+    transition: color 0.2s !important;
+}
+a:hover {
+    color: #34d399 !important;
+}
+
+.pf-c-login__main-header-desc, .subtitle, .required-fields, #kc-info-wrapper {
+    color: #94a3b8 !important;
+    font-size: 0.875rem !important;
+    text-align: center !important;
+    margin-bottom: 1.5rem !important;
+}
+
+#kc-info-wrapper {
+    margin-top: 2rem !important;
+}
+
+/* Error Alerts */
+.alert, .pf-c-alert {
+    background-color: rgba(244, 63, 94, 0.1) !important;
+    border: 1px solid rgba(244, 63, 94, 0.2) !important;
+    color: #f43f5e !important;
+    padding: 1rem !important;
+    border-radius: 0.5rem !important;
+    margin-bottom: 1.5rem !important;
+    font-size: 0.875rem !important;
+    font-weight: 600 !important;
+    text-align: center !important;
+}
+
+.alert-error {
+    background-color: rgba(244, 63, 94, 0.1) !important;
+    border-color: rgba(244, 63, 94, 0.2) !important;
+    color: #f43f5e !important;
+}
+
+.alert-success {
+    background-color: rgba(16, 185, 129, 0.1) !important;
+    border-color: rgba(16, 185, 129, 0.2) !important;
+    color: #10b981 !important;
+}
+
+/* Hide extra icons in alerts */
+.pf-c-alert__icon {
+    display: none !important;
+}

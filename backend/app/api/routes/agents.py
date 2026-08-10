@@ -1,10 +1,10 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Query, UploadFile, File
+from fastapi import APIRouter, Depends, HTTPException, status, Query, UploadFile, File, Response
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, delete
+from sqlalchemy import select, delete, func
 from typing import List, Dict, Any, Optional
 import os
 import shutil
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from app.core.database import get_db
 from app.agents.models import Agent, Prompt, PromptVersion, AgentVersion
@@ -12,8 +12,11 @@ from app.logs.models import AgentRun
 from app.logs.service import logs_service
 from app.agents.orchestrator import orchestrator
 from app.logging.logger import get_logger
+import hashlib
 
 logger = get_logger(__name__)
+GLOBAL_CACHE = {}
+
 router = APIRouter(prefix="/agents", tags=["agents"])
 
 # Pydantic schemas
@@ -21,41 +24,75 @@ class AgentCreate(BaseModel):
     name: str
     slug: str
     description: Optional[str] = None
+    how_to_use: Optional[str] = None
     agent_type: str
     prompt_content: str
     tools_enabled: List[str] = []
     memory_enabled: bool = True
+    allow_uploads: bool = False
     max_steps: int = 10
-    timeout_seconds: int = 120
+    timeout_seconds: int = 600
     model_policy_id: Optional[int] = None
+    order_index: int = 0
 
 class AgentUpdate(BaseModel):
     name: Optional[str] = None
     description: Optional[str] = None
+    how_to_use: Optional[str] = None
     prompt_content: Optional[str] = None
     tools_enabled: Optional[List[str]] = None
     memory_enabled: Optional[bool] = None
+    allow_uploads: Optional[bool] = None
     max_steps: Optional[int] = None
     timeout_seconds: Optional[int] = None
     model_policy_id: Optional[int] = None
     status: Optional[str] = None
+    order_index: Optional[int] = None
+
+class AgentReorderItem(BaseModel):
+    id: int
+    order_index: int
+
+class AgentReorderPayload(BaseModel):
+    agents: List[AgentReorderItem]
 
 class RunPayload(BaseModel):
-    query: str
+    query: str = Field(..., min_length=1)
+    multi_agent_mode: Optional[str] = Field(None, description="Multi-agent mode: direct, router, supervisor, swarm, auto")
+    target_agents: Optional[List[str]] = Field(None, description="Candidate agent slugs or IDs")
+    use_parallel_llm: bool = Field(False, description="Enable speculative parallel LLM racing")
 
 @router.get("")
 async def list_agents(db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(Agent).order_by(Agent.name))
+    result = await db.execute(select(Agent).order_by(Agent.order_index.asc(), Agent.created_at.desc()))
     return result.scalars().all()
 
+@router.post("/reorder")
+async def reorder_agents(payload: AgentReorderPayload, db: AsyncSession = Depends(get_db)):
+    for item in payload.agents:
+        await db.execute(
+            Agent.__table__.update()
+            .where(Agent.id == item.id)
+            .values(order_index=item.order_index)
+        )
+    await db.commit()
+    return {"success": True}
+
+from app.core.auth import get_current_super_admin, get_current_user
+
 @router.post("", status_code=status.HTTP_201_CREATED)
-async def create_agent(payload: AgentCreate, db: AsyncSession = Depends(get_db)):
+async def create_agent(payload: AgentCreate, db: AsyncSession = Depends(get_db), current_user = Depends(get_current_super_admin)):
     # Check if slug exists
     slug_res = await db.execute(select(Agent).where(Agent.slug == payload.slug))
     if slug_res.scalar_one_or_none():
         raise HTTPException(status_code=400, detail=f"Agent with slug '{payload.slug}' already exists.")
 
     try:
+        # Get min order_index so new agent appears at top
+        min_order_res = await db.execute(select(func.min(Agent.order_index)))
+        min_order = min_order_res.scalar() or 0
+        new_order = min_order - 1
+
         # 1. Create Prompt
         prompt = Prompt(
             name=f"{payload.name} Prompt",
@@ -81,15 +118,18 @@ async def create_agent(payload: AgentCreate, db: AsyncSession = Depends(get_db))
             name=payload.name,
             slug=payload.slug,
             description=payload.description,
+            how_to_use=payload.how_to_use,
             agent_type=payload.agent_type,
             prompt_id=prompt.id,
             prompt_version_id=prompt_ver.id,
             tools_enabled=payload.tools_enabled,
             memory_enabled=payload.memory_enabled,
+            allow_uploads=payload.allow_uploads,
             max_steps=payload.max_steps,
             timeout_seconds=payload.timeout_seconds,
             status="active",
-            model_policy_id=payload.model_policy_id
+            model_policy_id=payload.model_policy_id,
+            order_index=new_order
         )
         db.add(agent)
         await db.commit()
@@ -180,6 +220,7 @@ async def delete_agent(agent_id: int, db: AsyncSession = Depends(get_db)):
 async def run_agent(
     agent_id: int,
     payload: RunPayload,
+    response: Response,
     background: bool = Query(False),
     db: AsyncSession = Depends(get_db)
 ):
@@ -206,6 +247,7 @@ async def run_agent(
         # 2. Trigger Celery Task
         execute_agent_run.delay(agent_run.id, payload.query)
         logger.info("Enqueued background agent run Celery job", run_id=agent_run.id)
+        response.status_code = status.HTTP_202_ACCEPTED
         return {
             "success": True,
             "message": "Agent run enqueued in Celery queue.",
@@ -215,11 +257,30 @@ async def run_agent(
     else:
         # Synchronous execution
         try:
+            cache_key = hashlib.md5(f"{agent_id}:{payload.query}:{payload.multi_agent_mode}".encode()).hexdigest()
+            if cache_key in GLOBAL_CACHE:
+                logger.info("Cache hit for query", query=payload.query)
+                return GLOBAL_CACHE[cache_key]
+
+            if payload.multi_agent_mode and payload.multi_agent_mode.lower() != "direct":
+                from app.agents.multi_agent import multi_agent_engine
+                result = await multi_agent_engine.orchestrate(
+                    query=payload.query,
+                    db=db,
+                    pattern=payload.multi_agent_mode,
+                    target_agents=payload.target_agents,
+                    initial_agent=agent.slug,
+                    use_parallel_llm=payload.use_parallel_llm
+                )
+                GLOBAL_CACHE[cache_key] = result
+                return result
+
             result = await orchestrator.execute_run(
                 agent_id=agent_id,
                 query=payload.query,
                 db=db
             )
+            GLOBAL_CACHE[cache_key] = result
             return result
         except Exception as e:
             logger.exception("Synchronous agent run failed", agent_id=agent_id)

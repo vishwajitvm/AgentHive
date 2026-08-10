@@ -2759,3 +2759,49 @@ Frontend → Backend → PostgreSQL task row → Redis queue → Worker → MinI
 ```
 
 That is the full AgentHive debugging path.
+
+---
+
+# 23. Multi-Agent Engine & System Verification Guide
+
+## 23.1 Multi-Agent Engine Architecture (`MultiAgentEngine`)
+
+The multi-agent orchestration engine (`app/agents/multi_agent.py`) supports three execution patterns plus auto-classification:
+
+1. **Supervisor Mode (`pattern="supervisor"`)**:
+   - Decomposes user request into sub-tasks via LLM supervisor.
+   - Dispatches sub-tasks to specialized sub-agents.
+   - Synthesizes all sub-agent results into a final answer.
+2. **Swarm Mode (`pattern="swarm"`)**:
+   - Executes dynamic peer-to-peer agent control handoffs via `[HANDOFF] agent_slug | {context}`.
+   - Enforces `max_handoffs` limit to prevent infinite loops.
+3. **Router Mode (`pattern="router"`)**:
+   - Performs fast intent classification to route to a single specialized agent.
+4. **Auto Mode (`pattern="auto"`)**:
+   - Classifies query into supervisor, swarm, or router automatically.
+
+## 23.2 Speculative Parallel LLM Racing (`LLMRouter.generate_parallel()`)
+
+Queries multiple providers concurrently using `asyncio.wait(..., return_when=FIRST_COMPLETED)` across Gemini, Groq, Ollama, OpenAI, and HuggingFace. The fastest non-error result wins, and pending calls are cancelled.
+
+## 23.3 Modular 40-Tool Catalog & Sub-modules
+
+Registered in `app/tools/registry.py` and modularized in `app/tools/modules/`:
+- **13 Base Tools**: `file_tool`, `postgres_tool`, `redis_tool`, `minio_tool`, `loki_tool`, `code_tool`, `scraper_tool`, `translation_tool`, `youtube_transcript_tool`, `md_writer_tool`, `search_tool`, `pdf_tool`, `csv_reader_tool`.
+- **9 Web Tools**: `wikipedia_tool`, `arxiv_tool`, `rss_reader_tool`, `url_checker_tool`, `weather_tool`, `dns_lookup_tool`, `whois_tool`, `hacker_news_tool`, `github_repo_tool`.
+- **5 Document Tools**: `docx_tool`, `excel_writer_tool`, `pptx_tool`, `ocr_tool`, `json_yaml_tool`.
+- **5 Text/NLP Tools**: `sentiment_tool`, `text_summarizer_tool`, `diff_tool`, `keyword_extractor_tool`, `markdown_to_html_tool`.
+- **5 Utility Tools**: `calculator_tool`, `datetime_tool`, `image_metadata_tool`, `hash_crypto_tool`, `zip_archiver_tool`.
+- **3 Developer Tools**: `git_tool`, `sql_query_builder_tool`, `json_schema_validator`.
+
+## 23.4 Automated System Verification Commands
+
+1. **Verify Draw.io XML Architecture Diagram**:
+   ```bash
+   python docs/verify_drawio.py
+   ```
+2. **Run Pytest Test Suite**:
+   ```bash
+   pytest backend/tests/ -v
+   ```
+

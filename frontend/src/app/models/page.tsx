@@ -168,6 +168,7 @@ export default function ModelProvidersPage() {
                   <option value="openai">OpenAI (GPT)</option>
                   <option value="huggingface">Hugging Face</option>
                   <option value="groq">Groq</option>
+                  <option value="nvidia">NVIDIA</option>
                 </select>
               </div>
 
@@ -183,6 +184,7 @@ export default function ModelProvidersPage() {
                   <option value="openai">OpenAI (GPT)</option>
                   <option value="huggingface">Hugging Face</option>
                   <option value="groq">Groq</option>
+                  <option value="nvidia">NVIDIA</option>
                 </select>
               </div>
             </div>
@@ -193,7 +195,7 @@ export default function ModelProvidersPage() {
                 type="text" 
                 value={policyForm.fallback_order} 
                 onChange={(e) => setPolicyForm({...policyForm, fallback_order: e.target.value})}
-                placeholder="gemini,ollama,huggingface,groq,openai"
+                placeholder="gemini,ollama,huggingface,groq,openai,nvidia"
                 className="w-full bg-slate-900 border border-slate-800 rounded px-3 py-2 text-sm font-mono focus:outline-none focus:border-emerald-500"
               />
               <p className="text-[10px] text-slate-500 leading-normal">Comma-separated list prioritising failover order if endpoints fail.</p>
@@ -266,6 +268,18 @@ function ProviderFormCard({ provider, onSave }: { provider: any; onSave: (vals: 
     enabled: provider.enabled
   });
 
+  const getProviderColor = (type: string) => {
+    switch (type.toLowerCase()) {
+      case 'gemini': return 'border-blue-500/30 text-blue-300 bg-blue-500/10';
+      case 'openai': return 'border-emerald-500/30 text-emerald-300 bg-emerald-500/10';
+      case 'huggingface': return 'border-amber-500/30 text-amber-300 bg-amber-500/10';
+      case 'groq': return 'border-rose-500/30 text-rose-300 bg-rose-500/10';
+      case 'ollama': return 'border-cyan-500/30 text-cyan-300 bg-cyan-500/10';
+      case 'nvidia': return 'border-green-500/30 text-green-300 bg-green-500/10';
+      default: return 'border-slate-500/30 text-slate-300 bg-slate-500/10';
+    }
+  };
+
   return (
     <div className="rounded-xl border border-slate-900 bg-slate-950/40 p-6 space-y-4 hover:border-slate-800 transition-colors">
       <div className="flex justify-between items-center border-b border-slate-900/60 pb-3">
@@ -321,6 +335,19 @@ function ProviderFormCard({ provider, onSave }: { provider: any; onSave: (vals: 
           />
         </div>
       </div>
+
+      {provider.available_models && provider.available_models.length > 0 && (
+        <div className="border-t border-slate-900/60 pt-3 mt-4">
+          <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">Available Models</div>
+          <div className="flex flex-wrap gap-1.5">
+            {provider.available_models.map((model: string) => (
+              <span key={model} className={`text-[10px] border px-2 py-0.5 rounded-full font-mono ${getProviderColor(provider.provider_type)}`}>
+                {model}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="flex justify-end pt-2">
         <button 

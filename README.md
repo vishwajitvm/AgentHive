@@ -1,128 +1,89 @@
-# AgentHive
+# AgentHive — Advanced Multi-Agent Orchestration Architecture
 
-AgentHive is a free-first, Docker-first multi-agent platform for creating, deploying, monitoring, and managing multiple AI agents from one advanced dashboard.
+AgentHive is a free-first, Docker-first multi-agent orchestration platform for deploying, managing, observing, and executing specialized AI agents from a unified dashboard.
 
-The platform is designed for users who want to run many agent bots together, switch LLM providers from the dashboard, keep token usage low, and observe every action an agent performs.
+Designed for scalable multi-agent teamwork, AgentHive features dynamic pattern orchestration (Supervisor, Swarm, Router), speculative parallel LLM racing, a modular 40-tool catalog, and full observability integrations.
 
-## Project Goals
+---
 
-1. Build a scalable agent platform, not a single chatbot.
-2. Use free and self-hostable services wherever possible.
-3. Run the full system with Docker in local development and production.
-4. Support multiple LLM providers: Gemini, GPT, Ollama, Hugging Face, Groq, and custom OpenAI-compatible APIs.
-5. Use Gemini as the default primary model, with dashboard-controlled fallback to Ollama or other providers.
-6. Use TOON or compact key-value prompts for LLM context to reduce token usage.
-7. Keep frontend/backend API communication stable using JSON, but avoid sending large JSON into LLM prompts.
-8. Log everything professionally: API calls, agent runs, steps, tool calls, model calls, fallbacks, errors, latency, token usage, and workflow transitions.
-9. Make all major configuration manageable from the dashboard instead of changing code repeatedly.
-10. Maintain docs version-wise and update docs whenever any feature changes.
+## Key Features
 
-## Recommended Stack
+1. **Multi-Agent Orchestration Engine (`MultiAgentEngine`)**:
+   - **Supervisor Pattern**: Decomposes complex user requests into discrete sub-tasks, delegates sub-tasks to specialized sub-agents, and synthesizes findings into a unified final answer.
+   - **Swarm Pattern**: Enables dynamic peer-to-peer control transfers using `[HANDOFF] agent_slug | {context}` tags with execution loop safeguards (`max_handoffs`).
+   - **Router Pattern**: Conducts fast intent classification to route queries directly to the optimal specialized agent.
+   - **Auto Mode**: Classifies intent and automatically selects the optimal orchestration pattern.
 
-| Area | Technology | Reason |
+2. **Speculative Parallel Multi-LLM Racing (`LLMRouter.generate_parallel()`)**:
+   - Queries multiple configured providers concurrently (Gemini 1.5 Flash, Groq Llama3, Ollama Local, OpenAI GPT-4o-mini, HuggingFace Llama 3.2).
+   - Utilizes `asyncio.wait(..., return_when=FIRST_COMPLETED)` to return the fastest response instantly and cancel pending calls.
+
+3. **Categorized 40-Tool Catalog (`backend/app/tools/modules/`)**:
+   - **13 Infrastructure Base Tools**: `file_tool`, `postgres_tool`, `redis_tool`, `minio_tool`, `loki_tool`, `code_tool`, `scraper_tool`, `translation_tool`, `youtube_transcript_tool`, `md_writer_tool`, `search_tool`, `pdf_tool`, `csv_reader_tool`.
+   - **9 Web Tools**: `wikipedia_tool`, `arxiv_tool`, `rss_reader_tool`, `url_checker_tool`, `weather_tool`, `dns_lookup_tool`, `whois_tool`, `hacker_news_tool`, `github_repo_tool`.
+   - **5 Document Tools**: `docx_tool`, `excel_writer_tool`, `pptx_tool`, `ocr_tool`, `json_yaml_tool`.
+   - **5 Text & NLP Tools**: `sentiment_tool`, `text_summarizer_tool`, `diff_tool`, `keyword_extractor_tool`, `markdown_to_html_tool`.
+   - **5 Utility Tools**: `calculator_tool`, `datetime_tool`, `image_metadata_tool`, `hash_crypto_tool`, `zip_archiver_tool`.
+   - **3 Developer Tools**: `git_tool`, `sql_query_builder_tool`, `json_schema_validator`.
+
+4. **REST API Endpoint Extensions**:
+   - `POST /api/orchestrate`: Dynamic multi-agent pattern execution endpoint.
+   - `POST /api/agents/{id}/run`: Direct or delegated multi-agent run endpoint.
+
+5. **Full Observability & Traceability Stack**:
+   - Grafana Loki (:3100) container log aggregation.
+   - Prometheus (:9090) endpoint and LLM latency scraping.
+   - OpenTelemetry distributed tracing spans.
+   - Grafana (:3001) visual dashboards.
+
+---
+
+## Recommended Technology Stack
+
+| Component | Technology | Role |
 |---|---|---|
-| Frontend | Next.js + React + Tailwind CSS | Professional dashboard, routing, components, fast development |
-| Backend | Python FastAPI | Fast APIs, async support, agent orchestration, clean docs |
-| Database | PostgreSQL | Reliable relational data for agents, users, logs, workflows |
-| Vector Memory | pgvector | Free vector memory inside PostgreSQL |
-| Queue/Cache | Redis | Celery queue, cache, rate limits, temporary state |
-| Workers | Celery | Background agent runs, scheduled jobs, long-running tasks |
-| Storage | MinIO | Free S3-compatible local file storage |
-| Local LLM | Ollama | Free local fallback model runtime |
-| Primary LLM | Gemini | Default free/low-cost cloud model option |
-| Prompt Format | TOON + compact key-value | Lower LLM token usage than large JSON |
-| Reverse Proxy | Nginx | Production routing, TLS termination, static/proxy split |
-| Monitoring | Prometheus + Grafana | Metrics and dashboards |
-| Logs | Loki + Promtail | Container and application log aggregation |
-| Tracing | OpenTelemetry | Request and agent execution traces |
-| Deployment | Docker Compose first, Kubernetes later | Easy local/prod parity, scalable later |
+| Frontend | Next.js + React + Tailwind CSS | Interactive dashboard & monitoring UI |
+| Backend API | Python FastAPI | REST API & multi-agent orchestration |
+| Multi-Agent Engine | Custom `MultiAgentEngine` | Supervisor, Swarm, and Router pattern execution |
+| LLM Router | Custom `LLMRouter` | Speculative parallel racing & provider fallbacks |
+| Database & Vector | PostgreSQL + pgvector | Persistent data, execution logs, & embeddings |
+| Queue & Cache | Redis + Celery | Async agent tasks & job queues |
+| Storage | MinIO | S3-compatible workspace document storage |
+| Local LLM | Ollama | Zero-cost local inference fallback |
+| Observability | Loki + Prometheus + OpenTelemetry + Grafana | Logs, metrics, tracing, & dashboards |
 
-## High-Level Flow
+---
 
-```text
-User Dashboard
-  -> Nginx
-  -> FastAPI Backend
-  -> Agent Orchestrator
-  -> Agent Registry
-  -> LLM Router
-  -> Model Policy Engine
-  -> Provider Adapter
-  -> Gemini / Ollama / Hugging Face / GPT
-  -> Tool Layer
-  -> PostgreSQL / pgvector / Redis / MinIO
-  -> Observability Layer
+## Architecture & Verification
+
+### Architecture Diagram
+The XML architecture diagram is available in:
+- `docs/architecture.drawio`
+- `docs/diagrams/multi-agent-architecture.drawio`
+
+### Diagram XML Schema Verification
+Run the verification script to confirm valid XML schema structure and architectural keywords:
+```bash
+python docs/verify_drawio.py
 ```
 
-## Important Rule for Future AI Builders
-
-Whenever a feature, architecture decision, database table, workflow, agent behavior, environment variable, or deployment process changes, update the matching documentation in `/docs` and update `CHANGELOG.md`.
-
-Do not change implementation only. Documentation must stay synchronized with code.
-
-## Repository Structure
-
-```text
-AgentHive/
-  README.md
-  AI_BUILD_GUIDE.md
-  CHANGELOG.md
-  .gitignore
-  .env.example
-  docker-compose.yml
-  docker-compose.dev.yml
-  docker-compose.prod.yml
-  backend/
-  frontend/
-  infra/
-  scripts/
-  docs/
-    PROJECT_OVERVIEW.md
-    TECH_STACK.md
-    ARCHITECTURE.md
-    FEATURE_SPECIFICATION.md
-    LOGGING_AND_OBSERVABILITY.md
-    DEPLOYMENT_LOCAL.md
-    DEPLOYMENT_PRODUCTION.md
-    EDGE_CASES.md
-    DATABASE_DESIGN.md
-    VERSIONING_POLICY.md
-    AgentHive_Project_Documentation.docx
-    diagrams/
+### Pytest Verification Suite
+Run unit and integration tests across multi-agent engine, speculative LLM router, and tool catalog:
+```bash
+pytest backend/tests/ -v
 ```
 
-## MVP Build Order
-
-1. Docker foundation.
-2. Backend health API.
-3. Frontend dashboard shell.
-4. PostgreSQL and Redis connection.
-5. Agent CRUD APIs.
-6. Model provider CRUD APIs.
-7. LLM Router with Gemini primary and Ollama fallback.
-8. Agent run endpoint.
-9. Professional structured logging.
-10. Agent run dashboard.
-11. Tool system.
-12. Workflow executor.
-13. Monitoring with Grafana/Loki/Prometheus.
+---
 
 ## Running Locally
 
+1. Start all containerized services:
 ```bash
-docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
+docker compose up -d --build
 ```
 
-After first build, normal code changes should hot reload:
-
-- Frontend changes reload through Next.js dev server.
-- Backend changes reload through `uvicorn --reload`.
-- Worker changes restart through file watcher.
-
-## Production Run
-
-```bash
-docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
-```
-
-Production should use optimized images, no hot reload, health checks, restart policies, and persistent volumes.
+2. Access core services:
+- **Frontend Dashboard**: `http://localhost:3000`
+- **FastAPI OpenAPI Documentation**: `http://localhost:8000/docs`
+- **Grafana Monitoring**: `http://localhost:3001` (admin / admin)
+- **MinIO Storage Console**: `http://localhost:9001` (agenthive / agenthive123)

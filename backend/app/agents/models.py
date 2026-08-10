@@ -39,6 +39,9 @@ class Agent(Base):
     max_steps = Column(Integer, default=10, nullable=False)
     timeout_seconds = Column(Integer, default=120, nullable=False)
     status = Column(String(50), default="active", nullable=False)  # active, disabled
+    allow_uploads = Column(Boolean, default=False, nullable=False)
+    how_to_use = Column(Text, nullable=True)
+    order_index = Column(Integer, default=0, nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
 
@@ -57,5 +60,8 @@ class AgentVersion(Base):
     memory_enabled = Column(Boolean, nullable=False)
     max_steps = Column(Integer, nullable=False)
     timeout_seconds = Column(Integer, nullable=False)
+    allow_uploads = Column(Boolean, default=False, nullable=False)
+    how_to_use = Column(Text, nullable=True)
+    order_index = Column(Integer, default=0, nullable=False)
     version = Column(Integer, nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)

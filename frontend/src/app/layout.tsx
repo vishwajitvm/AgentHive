@@ -13,7 +13,9 @@ import {
   Heart,
   ChevronLeft,
   ChevronRight,
-  Wrench
+  Wrench,
+  LogOut,
+  UserCircle
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -41,24 +43,85 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       }
     };
     checkHealth();
-    const interval = setInterval(checkHealth, 8000);
+    const interval = setInterval(checkHealth, 30000); // Increased from 8s to 30s
     return () => clearInterval(interval);
   }, []);
 
-  const navItems = [
-    { name: 'Dashboard', path: '/', icon: LayoutDashboard },
-    { name: 'Agents', path: '/agents', icon: Bot },
-    { name: 'Tools Directory', path: '/tools', icon: Wrench },
-    { name: 'Models & Policies', path: '/models', icon: Sliders },
-    { name: 'Workflows', path: '/workflows', icon: Workflow },
-    { name: 'Activity Logs', path: '/logs', icon: Terminal },
-    { name: 'Secrets Manager', path: '/env', icon: Key },
-    { name: 'Monitoring', path: '/monitoring', icon: Activity },
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [userProfile, setUserProfile] = useState<{name: string, email: string} | null>(null);
+  
+  // Check admin status from JWT
+  useEffect(() => {
+    const token = document.cookie
+      .split('; ')
+      .find(row => row.startsWith('agenthive_token='))
+      ?.split('=')[1];
+      
+    if (token) {
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        const roles = payload.resource_access?.['agenthive-frontend']?.roles || [];
+        if (roles.includes('super_admin') || roles.includes('admin')) {
+          setIsAdmin(true);
+        }
+        setUserProfile({
+          name: payload.name || payload.preferred_username || payload.email?.split('@')[0] || 'User',
+          email: payload.email || ''
+        });
+      } catch (e) {
+        console.error('Failed to parse token');
+      }
+    }
+  }, [pathname]);
+
+  const handleLogout = () => {
+    // Read the id_token for seamless Keycloak logout
+    const idToken = document.cookie
+      .split('; ')
+      .find(row => row.startsWith('agenthive_id_token='))
+      ?.split('=')[1];
+
+    document.cookie = "agenthive_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+    document.cookie = "agenthive_id_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+    
+    let logoutUrl = "http://localhost:8080/realms/agenthive/protocol/openid-connect/logout?client_id=agenthive-frontend&post_logout_redirect_uri=" + encodeURIComponent("http://localhost:3000/login");
+    if (idToken) {
+      logoutUrl += "&id_token_hint=" + idToken;
+    }
+    
+    window.location.href = logoutUrl;
+  };
+
+  const allNavItems = [
+    { name: 'Dashboard', path: '/', icon: LayoutDashboard, adminOnly: false },
+    { name: 'Agents', path: '/agents', icon: Bot, adminOnly: false },
+    { name: 'Tools Directory', path: '/tools', icon: Wrench, adminOnly: false },
+    { name: 'Models & Policies', path: '/models', icon: Sliders, adminOnly: false },
+    { name: 'Workflows', path: '/workflows', icon: Workflow, adminOnly: false },
+    { name: 'Activity Logs', path: '/logs', icon: Terminal, adminOnly: true },
+    { name: 'Secrets Manager', path: '/env', icon: Key, adminOnly: true },
+    { name: 'Monitoring', path: '/monitoring', icon: Activity, adminOnly: true },
   ];
+
+  const navItems = allNavItems.filter(item => !item.adminOnly || isAdmin);
+
+  const isAuthPage = pathname === '/login' || pathname === '/signup' || pathname === '/verify';
+
+  if (isAuthPage) {
+    return (
+      <html lang="en">
+        <body className="bg-slate-950 text-slate-100 flex min-h-screen">
+          <main className="flex-1 overflow-y-auto bg-gradient-to-br from-slate-950 to-slate-900">
+            {children}
+          </main>
+        </body>
+      </html>
+    );
+  }
 
   return (
     <html lang="en">
-      <body className="bg-slate-950 text-slate-100 flex min-h-screen">
+      <body className="bg-slate-950 text-slate-100 flex h-screen overflow-hidden">
         {/* Sidebar */}
         <aside className={`border-r border-slate-900 bg-slate-950/70 backdrop-blur-md transition-all duration-300 flex flex-col ${isCollapsed ? 'w-20' : 'w-64'}`}>
           {/* Logo */}
@@ -80,7 +143,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </div>
 
           {/* Navigation links */}
-          <nav className="flex-1 px-4 py-6 space-y-2">
+          <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto custom-scrollbar">
             {navItems.map((item) => {
               const Icon = item.icon;
               const isActive = pathname === item.path;
@@ -102,7 +165,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </nav>
 
           {/* Footer health indicators */}
-          <div className="p-4 border-t border-slate-900 space-y-3">
+          <div className="p-4 border-t border-slate-900 space-y-3 shrink-0">
             <div className="flex items-center gap-3 justify-center md:justify-start">
               <span className={`w-3 h-3 rounded-full animate-pulse ${
                 healthStatus === 'healthy' ? 'bg-emerald-500 shadow-[0_0_8px_rgba(34,197,94,0.5)]' :
@@ -121,23 +184,52 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         </aside>
 
         {/* Main Content Pane */}
-        <div className="flex-1 flex flex-col min-h-screen">
+        <div className="flex-1 flex flex-col h-screen overflow-hidden">
           {/* Header */}
-          <header className="border-b border-slate-900 bg-slate-950/40 backdrop-blur-md px-8 py-4 flex items-center justify-between sticky top-0 z-50">
+          <header className="border-b border-slate-900 bg-slate-950/40 backdrop-blur-md px-8 py-4 flex items-center justify-between shrink-0">
             <div>
               <h1 className="text-lg font-bold">Workspace dashboard</h1>
             </div>
             
             <div className="flex items-center gap-4">
-              <span className="text-xs px-3 py-1 rounded-full bg-slate-900 border border-slate-800 text-slate-400">
+              {userProfile && (
+                <div className="flex items-center gap-3 mr-4 pl-4 border-l border-slate-800">
+                  <div className="bg-slate-800 p-1.5 rounded-full border border-slate-700">
+                    <UserCircle size={22} className="text-emerald-400" />
+                  </div>
+                  <div className="flex flex-col hidden sm:flex">
+                    <span className="text-sm font-bold text-slate-200 leading-tight">{userProfile.name}</span>
+                    <span className="text-[10px] text-slate-500">{userProfile.email}</span>
+                  </div>
+                  <button 
+                    onClick={handleLogout}
+                    className="ml-2 p-2 text-slate-400 hover:text-rose-400 hover:bg-slate-900 rounded-lg transition-colors"
+                    title="Logout"
+                  >
+                    <LogOut size={18} />
+                  </button>
+                </div>
+              )}
+              <span className="text-xs px-3 py-1 rounded-full bg-slate-900 border border-slate-800 text-slate-400 hidden md:inline-block">
                 Single-User Dev Session
               </span>
             </div>
           </header>
 
-          <main className="flex-1 p-8 overflow-y-auto bg-gradient-to-br from-slate-950 to-slate-900">
+          {/* Scrollable Main Content */}
+          <main className="flex-1 p-8 overflow-y-auto bg-gradient-to-br from-slate-950 to-slate-900 custom-scrollbar">
             {children}
           </main>
+          
+          {/* Main Footer (Global) */}
+          <footer className="border-t border-slate-900 bg-slate-950 px-8 py-3 shrink-0 flex items-center justify-between text-xs text-slate-500">
+            <div>&copy; {new Date().getFullYear()} AgentHive Platform</div>
+            <div className="flex items-center gap-4">
+              <span className="hover:text-slate-300 cursor-pointer transition-colors">Documentation</span>
+              <span className="hover:text-slate-300 cursor-pointer transition-colors">Support</span>
+              <span className="hover:text-slate-300 cursor-pointer transition-colors">v1.0.0-beta</span>
+            </div>
+          </footer>
         </div>
       </body>
     </html>
