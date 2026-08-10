@@ -56,7 +56,8 @@ class NvidiaProvider(BaseLLMProvider):
                 "temperature": 0.2
             }
             try:
-                async with httpx.AsyncClient(timeout=timeout) as client:
+                fast_timeout = min(timeout, 10.0)
+                async with httpx.AsyncClient(timeout=fast_timeout) as client:
                     logger.info("Calling NVIDIA NIM API", model=model, url=url)
                     response = await client.post(url, json=payload, headers=headers)
                     

@@ -20,8 +20,9 @@ class GitTool(BaseTool):
         return "Inspects git repository status, commit log, active branch, and diffs. Arguments: action ('status'/'log'/'branch'/'diff'), repo_path (optional, default workspace or project root), limit (optional int, default 5)."
 
     async def run(self, **kwargs) -> str:
-        action = kwargs.get("action", "status").strip().lower()
-        repo_path = kwargs.get("repo_path", "").strip()
+        action = str(kwargs.get("action", "status")).strip().lower()
+        repo_path = kwargs.get("repo_path") or kwargs.get("path") or kwargs.get("dir") or kwargs.get("directory") or ""
+        repo_path = str(repo_path).strip()
         limit = int(kwargs.get("limit", 5))
 
         target_dir = WORKSPACE_DIR
@@ -87,8 +88,9 @@ class SqlQueryBuilderTool(BaseTool):
         return "Formats, cleans, and validates SQL queries for syntax correctness without executing them. Arguments: query, dialect (optional, default 'postgres')."
 
     async def run(self, **kwargs) -> str:
-        query = kwargs.get("query", "").strip()
-        dialect = kwargs.get("dialect", "postgres").strip().lower()
+        query = kwargs.get("query") or kwargs.get("sql") or kwargs.get("statement") or kwargs.get("text") or ""
+        query = str(query).strip()
+        dialect = str(kwargs.get("dialect", "postgres")).strip().lower()
 
         if not query:
             return "Error: query parameter is required."
@@ -133,8 +135,8 @@ class JsonSchemaValidator(BaseTool):
         return "Validates a JSON object or string against a formal JSON Schema definition. Arguments: json_data (JSON string or dict), schema (JSON Schema dict or string)."
 
     async def run(self, **kwargs) -> str:
-        json_data_input = kwargs.get("json_data", "")
-        schema_input = kwargs.get("schema", "")
+        json_data_input = kwargs.get("json_data") or kwargs.get("json") or kwargs.get("data") or kwargs.get("content") or ""
+        schema_input = kwargs.get("schema") or kwargs.get("schema_data") or ""
 
         if not json_data_input or not schema_input:
             return "Error: Both 'json_data' and 'schema' parameters are required."

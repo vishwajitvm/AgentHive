@@ -40,7 +40,7 @@ class Settings(BaseSettings):
     default_fallback_order: str = "gemini,nvidia,huggingface,groq,openai,ollama"
     default_max_input_tokens: int = 12000
     default_max_output_tokens: int = 2048
-    default_llm_timeout_seconds: int = 300
+    default_llm_timeout_seconds: int = 15
 
     # Multi-Agent & Speculative LLM Racing Settings
     default_orchestration_pattern: str = "router"

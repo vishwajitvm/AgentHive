@@ -17,7 +17,8 @@ class SentimentTool(BaseTool):
         return "Analyzes sentiment polarity, emotion, and tone score of text. Arguments: text."
 
     async def run(self, **kwargs) -> str:
-        text = kwargs.get("text", "").strip()
+        text = kwargs.get("text") or kwargs.get("content") or kwargs.get("message") or ""
+        text = str(text).strip()
         if not text:
             return "Error: text parameter is required."
 
@@ -63,7 +64,8 @@ class TextSummarizerTool(BaseTool):
         return "Generates an extractive summary of long text by extracting key sentences. Arguments: text, num_sentences (optional int, default 3)."
 
     async def run(self, **kwargs) -> str:
-        text = kwargs.get("text", "").strip()
+        text = kwargs.get("text") or kwargs.get("content") or kwargs.get("document") or ""
+        text = str(text).strip()
         num_sentences = int(kwargs.get("num_sentences", 3))
 
         if not text:
@@ -107,8 +109,8 @@ class DiffTool(BaseTool):
         return "Computes unified or line-by-line diffs between two strings or text blocks. Arguments: text1, text2, label1 (optional, default 'Original'), label2 (optional, default 'Modified')."
 
     async def run(self, **kwargs) -> str:
-        text1 = kwargs.get("text1", "")
-        text2 = kwargs.get("text2", "")
+        text1 = kwargs.get("text1") or kwargs.get("original") or kwargs.get("content1") or ""
+        text2 = kwargs.get("text2") or kwargs.get("modified") or kwargs.get("content2") or ""
         label1 = kwargs.get("label1", "Original")
         label2 = kwargs.get("label2", "Modified")
 
@@ -137,7 +139,8 @@ class KeywordExtractorTool(BaseTool):
         return "Extracts key terms, n-grams, and term frequencies from text. Arguments: text, top_n (optional int, default 10)."
 
     async def run(self, **kwargs) -> str:
-        text = kwargs.get("text", "").strip()
+        text = kwargs.get("text") or kwargs.get("content") or kwargs.get("document") or ""
+        text = str(text).strip()
         top_n = int(kwargs.get("top_n", 10))
 
         if not text:

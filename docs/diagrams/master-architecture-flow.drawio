@@ -1,0 +1,256 @@
+<mxfile host="65bd71144e">
+    <diagram id="master-diagram-v5" name="Master Architecture Flow V5">
+        <mxGraphModel dx="2345" dy="1232" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="4000" pageHeight="9000" math="0" shadow="1">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="grp_client" value="1. Client &amp; Frontend Layer" style="shape=folder;fontStyle=1;spacingTop=20;tabWidth=500;tabHeight=40;tabPosition=left;html=1;fillColor=#f0fdf4;strokeColor=#86efac;strokeWidth=4;fontSize=26;verticalAlign=top;align=left;spacingLeft=30;dashed=1;shadow=1;" parent="1" vertex="1">
+                    <mxGeometry x="750" y="50" width="1500" height="1300" as="geometry"/>
+                </mxCell>
+                <mxCell id="grp_api" value="2. API Gateway &amp; Security Layer" style="shape=folder;fontStyle=1;spacingTop=20;tabWidth=500;tabHeight=40;tabPosition=left;html=1;fillColor=#eff6ff;strokeColor=#93c5fd;strokeWidth=4;fontSize=26;verticalAlign=top;align=left;spacingLeft=30;dashed=1;shadow=1;" parent="1" vertex="1">
+                    <mxGeometry x="750" y="1450" width="1500" height="1600" as="geometry"/>
+                </mxCell>
+                <mxCell id="grp_orch" value="3. LangGraph Orchestrator (The Brain)" style="shape=folder;fontStyle=1;spacingTop=20;tabWidth=500;tabHeight=40;tabPosition=left;html=1;fillColor=#fef3c7;strokeColor=#fcd34d;strokeWidth=4;fontSize=26;verticalAlign=top;align=left;spacingLeft=30;dashed=1;shadow=1;" parent="1" vertex="1">
+                    <mxGeometry x="500" y="3150" width="2000" height="2000" as="geometry"/>
+                </mxCell>
+                <mxCell id="grp_llm" value="4. LLM Router &amp; Smart Circuit Breaker" style="shape=folder;fontStyle=1;spacingTop=20;tabWidth=500;tabHeight=40;tabPosition=left;html=1;fillColor=#fce7f3;strokeColor=#f9a8d4;strokeWidth=4;fontSize=26;verticalAlign=top;align=left;spacingLeft=30;dashed=1;shadow=1;" parent="1" vertex="1">
+                    <mxGeometry x="750" y="5250" width="1500" height="1400" as="geometry"/>
+                </mxCell>
+                <mxCell id="grp_data" value="5. Memory, DB, Workers &amp; Physical Tools" style="shape=folder;fontStyle=1;spacingTop=20;tabWidth=500;tabHeight=40;tabPosition=left;html=1;fillColor=#f3e8ff;strokeColor=#d8b4fe;strokeWidth=4;fontSize=26;verticalAlign=top;align=left;spacingLeft=30;dashed=1;shadow=1;" parent="1" vertex="1">
+                    <mxGeometry x="500" y="6750" width="2000" height="2000" as="geometry"/>
+                </mxCell>
+                <mxCell id="user" value="👨‍💻 User&#xa;(Web, Mobile, REST API)" style="umlActor;whiteSpace=wrap;html=1;fillColor=#dbeafe;strokeColor=#1e293b;strokeWidth=2;fontStyle=1;fontSize=18;align=center;shadow=1;spacing=10;verticalLabelPosition=bottom;verticalAlign=top;outlineConnect=0;spacingTop=10;" parent="1" vertex="1">
+                    <mxGeometry x="1300" y="150" width="150" height="180" as="geometry"/>
+                </mxCell>
+                <mxCell id="nextjs_box" value="🖥️ Next.js Frontend Framework" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fef3c7;strokeColor=#f59e0b;strokeWidth=3;fontStyle=1;fontSize=20;verticalAlign=top;align=center;spacingTop=15;shadow=1;" parent="1" vertex="1">
+                    <mxGeometry x="850" y="500" width="500" height="450" as="geometry"/>
+                </mxCell>
+                <mxCell id="nextjs_server" value="Next.js SSR Server" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#1e293b;strokeWidth=2;fontStyle=1;fontSize=18;align=center;shadow=1;spacing=10;" parent="1" vertex="1">
+                    <mxGeometry x="900" y="600" width="400" height="120" as="geometry"/>
+                </mxCell>
+                <mxCell id="react_ui" value="React Client UI&#xa;(Dashboard &amp; Chat)" style="shape=browser;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#1e293b;strokeWidth=2;fontStyle=1;fontSize=18;align=center;shadow=1;spacing=10;" parent="1" vertex="1">
+                    <mxGeometry x="900" y="780" width="400" height="120" as="geometry"/>
+                </mxCell>
+                <mxCell id="nginx_box" value="🚪 Nginx Reverse Proxy Gateway" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fecaca;strokeColor=#ef4444;strokeWidth=3;fontStyle=1;fontSize=20;verticalAlign=top;align=center;spacingTop=15;shadow=1;" parent="1" vertex="1">
+                    <mxGeometry x="1600" y="500" width="500" height="450" as="geometry"/>
+                </mxCell>
+                <mxCell id="nginx_ssl" value="SSL/TLS Termination" style="shape=hexagon;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#1e293b;strokeWidth=2;fontStyle=1;fontSize=18;align=center;shadow=1;spacing=10;" parent="1" vertex="1">
+                    <mxGeometry x="1650" y="600" width="400" height="120" as="geometry"/>
+                </mxCell>
+                <mxCell id="nginx_router" value="URL Router&#xa;(/api vs /static)" style="shape=hexagon;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#1e293b;strokeWidth=2;fontStyle=1;fontSize=18;align=center;shadow=1;spacing=10;" parent="1" vertex="1">
+                    <mxGeometry x="1650" y="780" width="400" height="120" as="geometry"/>
+                </mxCell>
+                <mxCell id="fastapi_box" value="🧠 FastAPI Backend Core" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d1fae5;strokeColor=#10b981;strokeWidth=3;fontStyle=1;fontSize=20;verticalAlign=top;align=center;spacingTop=15;shadow=1;" parent="1" vertex="1">
+                    <mxGeometry x="1300" y="1550" width="500" height="650" as="geometry"/>
+                </mxCell>
+                <mxCell id="fastapi_app" value="FastAPI Application" style="shape=component;align=left;spacingLeft=50;;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#1e293b;strokeWidth=2;fontStyle=1;fontSize=18;align=center;shadow=1;spacing=10;" parent="1" vertex="1">
+                    <mxGeometry x="1350" y="1650" width="400" height="120" as="geometry"/>
+                </mxCell>
+                <mxCell id="fastapi_mid" value="Request &amp; Trace Middleware" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#1e293b;strokeWidth=2;fontStyle=1;fontSize=18;align=center;shadow=1;spacing=10;" parent="1" vertex="1">
+                    <mxGeometry x="1350" y="1850" width="400" height="120" as="geometry"/>
+                </mxCell>
+                <mxCell id="fastapi_auth" value="JWT Auth Guard" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#1e293b;strokeWidth=2;fontStyle=1;fontSize=18;align=center;shadow=1;spacing=10;" parent="1" vertex="1">
+                    <mxGeometry x="1350" y="2050" width="400" height="120" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth_check" value="🔐 Valid JWT?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fef08a;strokeColor=#1e293b;strokeWidth=2;fontStyle=1;fontSize=18;align=center;shadow=1;spacing=10;" parent="1" vertex="1">
+                    <mxGeometry x="1400" y="2300" width="300" height="300" as="geometry"/>
+                </mxCell>
+                <mxCell id="cache_check" value="⚡ Redis Cache Hit?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#e0e7ff;strokeColor=#1e293b;strokeWidth=2;fontStyle=1;fontSize=18;align=center;shadow=1;spacing=10;" parent="1" vertex="1">
+                    <mxGeometry x="1400" y="2700" width="300" height="300" as="geometry"/>
+                </mxCell>
+                <mxCell id="orch_main" value="⚙️ Agent Orchestrator&#xa;(LangChain Core)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffedd5;strokeColor=#1e293b;strokeWidth=2;fontStyle=1;fontSize=18;align=center;shadow=1;spacing=10;" parent="1" vertex="1">
+                    <mxGeometry x="1350" y="3250" width="400" height="160" as="geometry"/>
+                </mxCell>
+                <mxCell id="memory_store" value="🧠 Conversation Memory&#xa;Fetches Chat History" style="shape=document;whiteSpace=wrap;html=1;fillColor=#fed7aa;strokeColor=#1e293b;strokeWidth=2;fontStyle=1;fontSize=18;align=center;shadow=1;spacing=10;boundedLbl=1;size=0.2;" parent="1" vertex="1">
+                    <mxGeometry x="800" y="3550" width="400" height="160" as="geometry"/>
+                </mxCell>
+                <mxCell id="sys_prompt" value="📝 System Prompts&#xa;Injects Personality/Rules" style="shape=document;whiteSpace=wrap;html=1;fillColor=#fed7aa;strokeColor=#1e293b;strokeWidth=2;fontStyle=1;fontSize=18;align=center;shadow=1;spacing=10;boundedLbl=1;size=0.2;" parent="1" vertex="1">
+                    <mxGeometry x="1850" y="3550" width="400" height="160" as="geometry"/>
+                </mxCell>
+                <mxCell id="state_node" value="📊 State Graph Tracker&#xa;(LangGraph State Dict)&#xa;Tracks all Agent steps" style="shape=document;whiteSpace=wrap;html=1;fillColor=#ffedd5;strokeColor=#1e293b;strokeWidth=2;fontStyle=1;fontSize=18;align=center;shadow=1;spacing=10;boundedLbl=1;size=0.2;" parent="1" vertex="1">
+                    <mxGeometry x="1350" y="3550" width="400" height="160" as="geometry"/>
+                </mxCell>
+                <mxCell id="agent_node" value="🕵️ Agent Reasoning Node&#xa;Invokes LLM" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fed7aa;strokeColor=#1e293b;strokeWidth=2;fontStyle=1;fontSize=18;align=center;shadow=1;spacing=10;" parent="1" vertex="1">
+                    <mxGeometry x="1350" y="3850" width="400" height="160" as="geometry"/>
+                </mxCell>
+                <mxCell id="cond_edge" value="🔀 Conditional Edge&#xa;Does LLM want a Tool?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fef08a;strokeColor=#1e293b;strokeWidth=2;fontStyle=1;fontSize=18;align=center;shadow=1;spacing=10;" parent="1" vertex="1">
+                    <mxGeometry x="1400" y="4150" width="300" height="300" as="geometry"/>
+                </mxCell>
+                <mxCell id="llm_router" value="🚦 Smart LLM Router&#xa;Distributes Requests" style="shape=hexagon;whiteSpace=wrap;html=1;fillColor=#fce7f3;strokeColor=#1e293b;strokeWidth=2;fontStyle=1;fontSize=18;align=center;shadow=1;spacing=10;" parent="1" vertex="1">
+                    <mxGeometry x="1350" y="5350" width="400" height="160" as="geometry"/>
+                </mxCell>
+                <mxCell id="cb" value="🛡️ Circuit Breaker&#xa;429 Rate Limit Cooldown" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fecaca;strokeColor=#1e293b;strokeWidth=2;fontStyle=1;fontSize=18;align=center;shadow=1;spacing=10;" parent="1" vertex="1">
+                    <mxGeometry x="1400" y="5600" width="300" height="300" as="geometry"/>
+                </mxCell>
+                <mxCell id="gemini" value="☁️ Gemini 1.5 Flash&#xa;(Primary AI)" style="shape=cloud;whiteSpace=wrap;html=1;fillColor=#ccfbf1;strokeColor=#1e293b;strokeWidth=2;fontStyle=1;fontSize=18;align=center;shadow=1;spacing=10;" parent="1" vertex="1">
+                    <mxGeometry x="1350" y="6000" width="400" height="160" as="geometry"/>
+                </mxCell>
+                <mxCell id="groq" value="☁️ Groq Llama-3&#xa;(Fallback 1)" style="shape=cloud;whiteSpace=wrap;html=1;fillColor=#ccfbf1;strokeColor=#1e293b;strokeWidth=2;fontStyle=1;fontSize=18;align=center;shadow=1;spacing=10;" parent="1" vertex="1">
+                    <mxGeometry x="1350" y="6250" width="400" height="160" as="geometry"/>
+                </mxCell>
+                <mxCell id="hf" value="☁️ HuggingFace API&#xa;(Fallback 2)" style="shape=cloud;whiteSpace=wrap;html=1;fillColor=#ccfbf1;strokeColor=#1e293b;strokeWidth=2;fontStyle=1;fontSize=18;align=center;shadow=1;spacing=10;" parent="1" vertex="1">
+                    <mxGeometry x="1350" y="6500" width="400" height="160" as="geometry"/>
+                </mxCell>
+                <mxCell id="tools_box" value="🛠️ Real-World Tools Registry" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#cbd5e1;strokeColor=#64748b;strokeWidth=3;fontStyle=1;fontSize=20;verticalAlign=top;align=center;spacingTop=15;shadow=1;" parent="1" vertex="1">
+                    <mxGeometry x="650" y="6850" width="500" height="800" as="geometry"/>
+                </mxCell>
+                <mxCell id="tool_node" value="Tool Execution Node&#xa;(LangChain wrapper)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#1e293b;strokeWidth=2;fontStyle=1;fontSize=18;align=center;shadow=1;spacing=10;" parent="1" vertex="1">
+                    <mxGeometry x="700" y="6950" width="400" height="120" as="geometry"/>
+                </mxCell>
+                <mxCell id="tool_web" value="🌐 Web Scraper Tool" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#1e293b;strokeWidth=2;fontStyle=1;fontSize=18;align=center;shadow=1;spacing=10;" parent="1" vertex="1">
+                    <mxGeometry x="700" y="7150" width="400" height="120" as="geometry"/>
+                </mxCell>
+                <mxCell id="tool_py" value="💻 Python Code Exec" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#1e293b;strokeWidth=2;fontStyle=1;fontSize=18;align=center;shadow=1;spacing=10;" parent="1" vertex="1">
+                    <mxGeometry x="700" y="7350" width="400" height="120" as="geometry"/>
+                </mxCell>
+                <mxCell id="tool_file" value="📁 File System Writer" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#1e293b;strokeWidth=2;fontStyle=1;fontSize=18;align=center;shadow=1;spacing=10;" parent="1" vertex="1">
+                    <mxGeometry x="700" y="7550" width="400" height="120" as="geometry"/>
+                </mxCell>
+                <mxCell id="final_ans" value="✅ Final Answer Formatter&#xa;Generates Markdown String" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#bbf7d0;strokeColor=#1e293b;strokeWidth=2;fontStyle=1;fontSize=18;align=center;shadow=1;spacing=10;" parent="1" vertex="1">
+                    <mxGeometry x="1350" y="6850" width="400" height="160" as="geometry"/>
+                </mxCell>
+                <mxCell id="db_box" value="💾 Persistence &amp; State Layer" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f3e8ff;strokeColor=#a855f7;strokeWidth=3;fontStyle=1;fontSize=20;verticalAlign=top;align=center;spacingTop=15;shadow=1;" parent="1" vertex="1">
+                    <mxGeometry x="1850" y="6850" width="600" height="950" as="geometry"/>
+                </mxCell>
+                <mxCell id="postgres" value="🗄️ PostgreSQL&#xa;Users, Analytics, Logs" style="cylinder;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#1e293b;strokeWidth=2;fontStyle=1;fontSize=18;align=center;shadow=1;spacing=10;boundedLbl=1;backgroundOutline=1;size=25;" parent="1" vertex="1">
+                    <mxGeometry x="1950" y="6950" width="400" height="200" as="geometry"/>
+                </mxCell>
+                <mxCell id="redis" value="⚡ Redis&#xa;Cache, Rate Limits" style="cylinder;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#1e293b;strokeWidth=2;fontStyle=1;fontSize=18;align=center;shadow=1;spacing=10;boundedLbl=1;backgroundOutline=1;size=25;" parent="1" vertex="1">
+                    <mxGeometry x="1950" y="7250" width="400" height="200" as="geometry"/>
+                </mxCell>
+                <mxCell id="vectordb" value="🧠 Vector Database&#xa;RAG Embeddings" style="cylinder;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#1e293b;strokeWidth=2;fontStyle=1;fontSize=18;align=center;shadow=1;spacing=10;boundedLbl=1;backgroundOutline=1;size=25;" parent="1" vertex="1">
+                    <mxGeometry x="1950" y="7550" width="400" height="200" as="geometry"/>
+                </mxCell>
+                <mxCell id="celery_box" value="⏱️ Async Background Processing" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e2e8f0;strokeColor=#64748b;strokeWidth=3;fontStyle=1;fontSize=20;verticalAlign=top;align=center;spacingTop=15;shadow=1;" parent="1" vertex="1">
+                    <mxGeometry x="1850" y="7900" width="600" height="450" as="geometry"/>
+                </mxCell>
+                <mxCell id="celery_worker" value="Celery Worker Process" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#1e293b;strokeWidth=2;fontStyle=1;fontSize=18;align=center;shadow=1;spacing=10;" parent="1" vertex="1">
+                    <mxGeometry x="1950" y="8000" width="400" height="120" as="geometry"/>
+                </mxCell>
+                <mxCell id="celery_queue" value="Redis Task Queue" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#1e293b;strokeWidth=2;fontStyle=1;fontSize=18;align=center;shadow=1;spacing=10;" parent="1" vertex="1">
+                    <mxGeometry x="1950" y="8180" width="400" height="120" as="geometry"/>
+                </mxCell>
+                <mxCell id="e1" value="HTTPS Request" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#1e293b;strokeWidth=4;fontSize=16;fontStyle=1;labelBackgroundColor=#ffffff;" parent="1" source="user" target="nginx_ssl" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e2" value="Decrypts" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#1e293b;strokeWidth=4;fontSize=16;fontStyle=1;labelBackgroundColor=#ffffff;" parent="1" source="nginx_ssl" target="nginx_router" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e3" value="Route / (Frontend)" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#1e293b;strokeWidth=4;fontSize=16;fontStyle=1;labelBackgroundColor=#ffffff;dashed=1;dashPattern=1 4;" parent="1" source="nginx_router" target="nextjs_server" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e4" value="Renders HTML" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#1e293b;strokeWidth=4;fontSize=16;fontStyle=1;labelBackgroundColor=#ffffff;dashed=1;dashPattern=1 4;" parent="1" source="nextjs_server" target="react_ui" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e5" value="Route /api (Backend)" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#1e293b;strokeWidth=4;fontSize=16;fontStyle=1;labelBackgroundColor=#ffffff;" parent="1" source="nginx_router" target="fastapi_app" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e6" value="Process" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#1e293b;strokeWidth=4;fontSize=16;fontStyle=1;labelBackgroundColor=#ffffff;" parent="1" source="fastapi_app" target="fastapi_mid" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e7" value="Extract Token" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#1e293b;strokeWidth=4;fontSize=16;fontStyle=1;labelBackgroundColor=#ffffff;" parent="1" source="fastapi_mid" target="fastapi_auth" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e8" value="Validate" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#1e293b;strokeWidth=4;fontSize=16;fontStyle=1;labelBackgroundColor=#ffffff;" parent="1" source="fastapi_auth" target="auth_check" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e9" value="Valid Auth (PASS)" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#059669;strokeWidth=4;fontSize=16;fontStyle=1;labelBackgroundColor=#ffffff;" parent="1" source="auth_check" target="cache_check" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e10" value="Cache MISS (Run AI)" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#b91c1c;strokeWidth=4;fontSize=16;fontStyle=1;labelBackgroundColor=#ffffff;" parent="1" source="cache_check" target="orch_main" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e11" value="Cache HIT (Return Instant)" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#059669;strokeWidth=4;fontSize=16;fontStyle=1;labelBackgroundColor=#ffffff;" parent="1" source="cache_check" target="fastapi_app" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="1900" y="2850"/>
+                            <mxPoint x="1900" y="1740"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="e12" value="Init State" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#1e293b;strokeWidth=4;fontSize=16;fontStyle=1;labelBackgroundColor=#ffffff;" parent="1" source="orch_main" target="state_node" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e13" value="Load Memory" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#1e293b;strokeWidth=4;fontSize=16;fontStyle=1;labelBackgroundColor=#ffffff;" parent="1" source="memory_store" target="state_node" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e14" value="Load Rules" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#1e293b;strokeWidth=4;fontSize=16;fontStyle=1;labelBackgroundColor=#ffffff;" parent="1" source="sys_prompt" target="state_node" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e15" value="Start ReAct" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#1e293b;strokeWidth=4;fontSize=16;fontStyle=1;labelBackgroundColor=#ffffff;" parent="1" source="state_node" target="agent_node" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e16" value="Request Generation" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#1e293b;strokeWidth=4;fontSize=16;fontStyle=1;labelBackgroundColor=#ffffff;" parent="1" source="agent_node" target="llm_router" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e17" value="Health Check" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#1e293b;strokeWidth=4;fontSize=16;fontStyle=1;labelBackgroundColor=#ffffff;" parent="1" source="llm_router" target="cb" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e18" value="Healthy (PASS)" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#059669;strokeWidth=4;fontSize=16;fontStyle=1;labelBackgroundColor=#ffffff;" parent="1" source="cb" target="gemini" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e19" value="Gemini 429&#xa;(Block 60s)" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#b91c1c;strokeWidth=4;fontSize=16;fontStyle=1;labelBackgroundColor=#ffffff;" parent="1" source="cb" target="groq" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e20" value="Groq 429&#xa;(Block 60s)" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#b91c1c;strokeWidth=4;fontSize=16;fontStyle=1;labelBackgroundColor=#ffffff;" parent="1" source="cb" target="hf" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e21" value="LLM Output" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#1e293b;strokeWidth=4;fontSize=16;fontStyle=1;labelBackgroundColor=#ffffff;" parent="1" source="gemini" target="cond_edge" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e22" value="LLM Output" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#1e293b;strokeWidth=4;fontSize=16;fontStyle=1;labelBackgroundColor=#ffffff;" parent="1" source="groq" target="cond_edge" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e23" value="LLM Output" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#1e293b;strokeWidth=4;fontSize=16;fontStyle=1;labelBackgroundColor=#ffffff;" parent="1" source="hf" target="cond_edge" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e24" value="YES (Wants Tool)" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#1e293b;strokeWidth=4;fontSize=16;fontStyle=1;labelBackgroundColor=#ffffff;" parent="1" source="cond_edge" target="tool_node" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e25" value="NO (Finished)" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#059669;strokeWidth=4;fontSize=16;fontStyle=1;labelBackgroundColor=#ffffff;" parent="1" source="cond_edge" target="final_ans" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e26" value="Route" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#1e293b;strokeWidth=4;fontSize=16;fontStyle=1;labelBackgroundColor=#ffffff;" parent="1" source="tool_node" target="tool_web" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e27" value="Route" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#1e293b;strokeWidth=4;fontSize=16;fontStyle=1;labelBackgroundColor=#ffffff;" parent="1" source="tool_node" target="tool_py" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e28" value="Route" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#1e293b;strokeWidth=4;fontSize=16;fontStyle=1;labelBackgroundColor=#ffffff;" parent="1" source="tool_node" target="tool_file" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e29" value="Observation" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#1e293b;strokeWidth=4;fontSize=16;fontStyle=1;labelBackgroundColor=#ffffff;dashed=1;dashPattern=1 4;" parent="1" source="tool_web" target="state_node" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e30" value="Observation" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#1e293b;strokeWidth=4;fontSize=16;fontStyle=1;labelBackgroundColor=#ffffff;dashed=1;dashPattern=1 4;" parent="1" source="tool_py" target="state_node" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e31" value="Observation" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#1e293b;strokeWidth=4;fontSize=16;fontStyle=1;labelBackgroundColor=#ffffff;dashed=1;dashPattern=1 4;" parent="1" source="tool_file" target="state_node" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="1770" y="7610"/>
+                            <mxPoint x="1770" y="3630"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="e32" value="Save Chat" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#1e293b;strokeWidth=4;fontSize=16;fontStyle=1;labelBackgroundColor=#ffffff;" parent="1" source="final_ans" target="postgres" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e33" value="Cache Output" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#1e293b;strokeWidth=4;fontSize=16;fontStyle=1;labelBackgroundColor=#ffffff;" parent="1" source="final_ans" target="redis" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e34" value="Queue Background Tasks" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#1e293b;strokeWidth=4;fontSize=16;fontStyle=1;labelBackgroundColor=#ffffff;" parent="1" source="fastapi_app" target="celery_queue" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="2550" y="1710"/>
+                            <mxPoint x="2550" y="8240"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="e35" value="Process Tasks" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#1e293b;strokeWidth=4;fontSize=16;fontStyle=1;labelBackgroundColor=#ffffff;" parent="1" source="celery_queue" target="celery_worker" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+</mxfile>

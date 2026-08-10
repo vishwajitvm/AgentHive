@@ -208,8 +208,8 @@ export async function resumeWorkflowRun(runId: number) {
 }
 
 // Logs API
-export async function getAgentRuns(agentId?: number, status?: string) {
-  let url = `${API_URL}/api/logs/runs?limit=25`;
+export async function getAgentRuns(agentId?: number, status?: string, limit: number = 15, offset: number = 0) {
+  let url = `${API_URL}/api/logs/runs?limit=${limit}&offset=${offset}`;
   if (agentId) url += `&agent_id=${agentId}`;
   if (status) url += `&status=${status}`;
   const response = await fetch(url, { cache: 'no-store' });
@@ -217,17 +217,28 @@ export async function getAgentRuns(agentId?: number, status?: string) {
   return response.json();
 }
 
-export async function getLlmCalls(agentRunId?: number) {
-  let url = `${API_URL}/api/logs/llm-calls?limit=25`;
+export async function getLlmCalls(agentRunId?: number, limit: number = 15, offset: number = 0) {
+  let url = `${API_URL}/api/logs/llm-calls?limit=${limit}&offset=${offset}`;
   if (agentRunId) url += `&agent_run_id=${agentRunId}`;
   const response = await fetch(url, { cache: 'no-store' });
   if (!response.ok) throw new Error('Failed to fetch LLM call details');
   return response.json();
 }
 
-export async function getSystemStats() {
-  const response = await fetch(`${API_URL}/api/logs/stats`, { cache: 'no-store' });
-  if (!response.ok) throw new Error('Failed to fetch telemetry metrics');
+export async function getSystemStats(timeRange: string = 'all', provider?: string) {
+  const params = new URLSearchParams();
+  if (timeRange && timeRange !== 'all') params.append('time_range', timeRange);
+  if (provider && provider !== 'all') params.append('provider', provider);
+  
+  const queryStr = params.toString() ? `?${params.toString()}` : '';
+  const response = await fetch(`${API_URL}/api/logs/stats${queryStr}`);
+  if (!response.ok) throw new Error('Failed to fetch stats');
+  return response.json();
+}
+
+export async function getSystemResources() {
+  const response = await fetch(`${API_URL}/api/logs/system-resources`);
+  if (!response.ok) return { cpu_percent: 0, memory_percent: 0 };
   return response.json();
 }
 

@@ -6,6 +6,14 @@ logger = get_logger(__name__)
 
 class GeminiProvider(BaseLLMProvider):
     """Google Gemini model provider adapter utilizing direct REST endpoints."""
+    fallback_models = [
+        "gemini-3.1-pro",
+        "gemini-3.6-flash",
+        "gemini-3.5-flash",
+        "gemini-3.5-flash-lite",
+        "gemini-1.5-pro",
+        "gemini-1.5-flash"
+    ]
 
     async def generate(
         self,

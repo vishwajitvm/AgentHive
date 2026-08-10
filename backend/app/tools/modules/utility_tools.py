@@ -26,7 +26,8 @@ class CalculatorTool(BaseTool):
         return "Safely evaluates math expressions, formulas, and scientific calculations. Arguments: expression (math string, e.g. 'sqrt(16) + sin(pi/2) * 5')."
 
     async def run(self, **kwargs) -> str:
-        expression = kwargs.get("expression", "").strip()
+        expression = kwargs.get("expression") or kwargs.get("formula") or kwargs.get("math") or kwargs.get("equation") or ""
+        expression = str(expression).strip()
         if not expression:
             return "Error: expression parameter is required."
 
@@ -90,9 +91,10 @@ class DatetimeTool(BaseTool):
         return "Performs timezone conversions, date arithmetic, ISO formatting, and timestamp calculations. Arguments: action ('current'/'convert_tz'/'diff'/'add_time'), date_str (optional), timezone (optional, default 'UTC'), days/hours/minutes (optional numbers for arithmetic)."
 
     async def run(self, **kwargs) -> str:
-        action = kwargs.get("action", "current").strip().lower()
-        date_str = kwargs.get("date_str", "").strip()
-        tz_name = kwargs.get("timezone", "UTC").strip()
+        action = str(kwargs.get("action", "current")).strip().lower()
+        date_str = kwargs.get("date_str") or kwargs.get("date") or kwargs.get("time") or ""
+        date_str = str(date_str).strip()
+        tz_name = str(kwargs.get("timezone", "UTC")).strip()
         days = float(kwargs.get("days", 0))
         hours = float(kwargs.get("hours", 0))
         minutes = float(kwargs.get("minutes", 0))
@@ -149,7 +151,8 @@ class ImageMetadataTool(BaseTool):
         return "Reads image dimensions, color format, DPI, and EXIF tags from workspace image files. Arguments: filename."
 
     async def run(self, **kwargs) -> str:
-        filename = kwargs.get("filename", "").strip()
+        filename = kwargs.get("filename") or kwargs.get("file") or kwargs.get("name") or kwargs.get("image") or ""
+        filename = str(filename).strip()
         if not filename:
             return "Error: filename parameter is required."
 
@@ -198,8 +201,8 @@ class HashCryptoTool(BaseTool):
         return "Generates cryptographic hashes (MD5, SHA256, SHA512), Base64 encoding/decoding, or HMAC signatures. Arguments: action ('hash'/'base64_encode'/'base64_decode'/'hmac'), data, algorithm (for hash: md5/sha256/sha512, default 'sha256'), secret_key (for hmac)."
 
     async def run(self, **kwargs) -> str:
-        action = kwargs.get("action", "hash").strip().lower()
-        data = kwargs.get("data", "")
+        action = str(kwargs.get("action", "hash")).strip().lower()
+        data = kwargs.get("data") or kwargs.get("text") or kwargs.get("content") or ""
         algorithm = kwargs.get("algorithm", "sha256").strip().lower()
         secret_key = kwargs.get("secret_key", "")
 
@@ -250,10 +253,11 @@ class ZipArchiverTool(BaseTool):
         return "Creates, extracts, or inspects ZIP archives in workspace. Arguments: action ('compress'/'extract'/'list'), zip_filename, filenames (list of files for compress), extract_to (optional subfolder for extract)."
 
     async def run(self, **kwargs) -> str:
-        action = kwargs.get("action", "").strip().lower()
-        zip_filename = kwargs.get("zip_filename", "").strip()
-        filenames = kwargs.get("filenames", [])
-        extract_to = kwargs.get("extract_to", "").strip()
+        action = str(kwargs.get("action", "")).strip().lower()
+        zip_filename = kwargs.get("zip_filename") or kwargs.get("zip") or kwargs.get("archive") or kwargs.get("filename") or kwargs.get("file") or ""
+        zip_filename = str(zip_filename).strip()
+        filenames = kwargs.get("filenames") or kwargs.get("files") or kwargs.get("names") or []
+        extract_to = str(kwargs.get("extract_to", "")).strip()
 
         if action not in ["compress", "extract", "list"]:
             return "Error: action must be 'compress', 'extract', or 'list'."

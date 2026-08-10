@@ -19,8 +19,9 @@ class WikipediaTool(BaseTool):
         return "Searches Wikipedia and fetches article summaries. Arguments: query (search title or keyword), lang (optional language code, default 'en')."
 
     async def run(self, **kwargs) -> str:
-        query = kwargs.get("query", "").strip()
-        lang = kwargs.get("lang", "en").strip().lower()
+        query = kwargs.get("query") or kwargs.get("search_query") or kwargs.get("text") or kwargs.get("q") or ""
+        query = str(query).strip()
+        lang = str(kwargs.get("lang", "en")).strip().lower()
         if not query:
             return "Error: query parameter is required."
 
@@ -64,7 +65,8 @@ class ArxivTool(BaseTool):
         return "Searches scientific preprints and papers on ArXiv. Arguments: query (search string), max_results (optional integer, default 5)."
 
     async def run(self, **kwargs) -> str:
-        query = kwargs.get("query", "").strip()
+        query = kwargs.get("query") or kwargs.get("search_query") or kwargs.get("text") or kwargs.get("q") or ""
+        query = str(query).strip()
         max_results = int(kwargs.get("max_results", 5))
         if not query:
             return "Error: query parameter is required."
@@ -105,7 +107,8 @@ class RssReaderTool(BaseTool):
         return "Parses RSS or Atom feeds from a feed URL. Arguments: url (feed URL), max_items (optional int, default 5)."
 
     async def run(self, **kwargs) -> str:
-        url = kwargs.get("url", "").strip()
+        url = kwargs.get("url") or kwargs.get("link") or kwargs.get("uri") or ""
+        url = str(url).strip()
         max_items = int(kwargs.get("max_items", 5))
         if not url:
             return "Error: url parameter is required."
@@ -159,7 +162,8 @@ class UrlCheckerTool(BaseTool):
         return "Checks HTTP status, response headers, redirects, and SSL status for a URL. Arguments: url."
 
     async def run(self, **kwargs) -> str:
-        url = kwargs.get("url", "").strip()
+        url = kwargs.get("url") or kwargs.get("link") or kwargs.get("uri") or ""
+        url = str(url).strip()
         if not url:
             return "Error: url parameter is required."
         if not url.startswith("http://") and not url.startswith("https://"):
@@ -200,7 +204,8 @@ class WeatherTool(BaseTool):
         return "Fetches live weather forecasts via Open-Meteo API. Arguments: location (city name or 'lat,lon', e.g. 'London' or '51.50,-0.12')."
 
     async def run(self, **kwargs) -> str:
-        location = kwargs.get("location", "").strip()
+        location = kwargs.get("location") or kwargs.get("city") or kwargs.get("address") or ""
+        location = str(location).strip()
         if not location:
             return "Error: location parameter is required."
 
@@ -263,8 +268,9 @@ class DnsLookupTool(BaseTool):
         return "Resolves DNS records (A, AAAA, MX, TXT, CNAME, NS) for a domain. Arguments: domain, record_type (optional, default 'A')."
 
     async def run(self, **kwargs) -> str:
-        domain = kwargs.get("domain", "").strip().lower().replace("https://", "").replace("http://", "").split("/")[0]
-        record_type = kwargs.get("record_type", "A").strip().upper()
+        domain = kwargs.get("domain") or kwargs.get("url") or kwargs.get("host") or ""
+        domain = str(domain).strip().lower().replace("https://", "").replace("http://", "").split("/")[0]
+        record_type = str(kwargs.get("record_type", "A")).strip().upper()
         if not domain:
             return "Error: domain parameter is required."
 
@@ -291,7 +297,8 @@ class WhoisTool(BaseTool):
         return "Retrieves domain WHOIS registration information. Arguments: domain."
 
     async def run(self, **kwargs) -> str:
-        domain = kwargs.get("domain", "").strip().lower().replace("https://", "").replace("http://", "").split("/")[0]
+        domain = kwargs.get("domain") or kwargs.get("url") or kwargs.get("host") or ""
+        domain = str(domain).strip().lower().replace("https://", "").replace("http://", "").split("/")[0]
         if not domain:
             return "Error: domain parameter is required."
 
@@ -378,8 +385,9 @@ class GithubRepoTool(BaseTool):
         return "Inspects public GitHub repositories, commits, issues, or releases. Arguments: repo ('owner/repo'), action ('info'/'commits'/'issues'/'releases', default 'info'), limit (optional int, default 5)."
 
     async def run(self, **kwargs) -> str:
-        repo = kwargs.get("repo", "").strip().replace("https://github.com/", "")
-        action = kwargs.get("action", "info").strip().lower()
+        repo = kwargs.get("repo") or kwargs.get("repository") or kwargs.get("name") or ""
+        repo = str(repo).strip().replace("https://github.com/", "")
+        action = str(kwargs.get("action", "info")).strip().lower()
         limit = int(kwargs.get("limit", 5))
 
         if not repo or "/" not in repo:

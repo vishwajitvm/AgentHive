@@ -6,6 +6,15 @@ logger = get_logger(__name__)
 
 class OllamaProvider(BaseLLMProvider):
     """Local Ollama model provider adapter calling Ollama chat endpoints."""
+    fallback_models = [
+        "llama3.2",
+        "llama3.1",
+        "llama3",
+        "mistral",
+        "gemma2",
+        "qwen2.5",
+        "phi3"
+    ]
 
     async def generate(
         self,

@@ -81,7 +81,7 @@
         <mxCell id="group_llm" value="5. Speculative Parallel LLM Router (app/llm/router.py)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FEF2F2;strokeColor=#EF4444;fontStyle=1;fontSize=16;verticalAlign=top;align=left;spacingLeft=15;spacingTop=10;dashed=1;dashPattern=5 5;" vertex="1" parent="1">
           <mxGeometry x="50" y="970" width="1700" height="190" as="geometry" />
         </mxCell>
-        <mxCell id="node_llm_router" value="LLMRouter.generate_parallel()&#xa;• Concurrent Multi-Provider Speculative Racing&#xa;• asyncio.wait(..., return_when=FIRST_COMPLETED)&#xa;• Returns lowest-latency non-error response &amp; cancels pending" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FCA5A5;strokeColor=#B91C1C;fontSize=12;fontStyle=1;" vertex="1" parent="1">
+        <mxCell id="node_llm_router" value="LLMRouter (Smart Circuit Breaker)&#xa;• Rate-Limit Cooldown skips blocked APIs&#xa;• Concurrent Multi-Provider Speculative Racing&#xa;• asyncio.wait(..., return_when=FIRST_COMPLETED)&#xa;• Returns lowest-latency non-error response" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FCA5A5;strokeColor=#B91C1C;fontSize=12;fontStyle=1;" vertex="1" parent="1">
           <mxGeometry x="80" y="1010" width="450" height="130" as="geometry" />
         </mxCell>
         <mxCell id="node_prov_gemini" value="Gemini Provider Adapter&#xa;(gemini-1.5-flash)&#xa;Primary Cloud Provider" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FECACA;strokeColor=#DC2626;fontSize=11;fontStyle=1;" vertex="1" parent="1">

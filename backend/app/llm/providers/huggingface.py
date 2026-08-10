@@ -6,6 +6,20 @@ logger = get_logger(__name__)
 
 class HuggingFaceProvider(BaseLLMProvider):
     """Hugging Face Inference API adapter."""
+    fallback_models = [
+        "meta-llama/Llama-3.3-70B-Instruct",
+        "meta-llama/Llama-3.1-8B-Instruct",
+        "Qwen/Qwen2.5-72B-Instruct",
+        "Qwen/Qwen2.5-7B-Instruct",
+        "deepseek-ai/DeepSeek-V3",
+        "deepseek-ai/DeepSeek-R1",
+        "google/gemma-4-31B-it",
+        "google/gemma-3-27b-it",
+        "microsoft/phi-4",
+        "CohereLabs/c4ai-command-r-08-2024",
+        "moonshotai/Kimi-K3",
+        "zai-org/GLM-5.2"
+    ]
 
     async def generate(
         self,
@@ -31,27 +45,21 @@ class HuggingFaceProvider(BaseLLMProvider):
         if api_key:
             headers["Authorization"] = f"Bearer {api_key}"
 
-        # Combine prompts for standard text-generation task
-        full_input = ""
+        messages = []
         if system_prompt:
-            full_input += f"System: {system_prompt}\n"
-        full_input += f"User: {prompt}\nAssistant:"
-
-        payload = {
-            "inputs": full_input,
-            "parameters": {
-                "max_new_tokens": max_tokens,
-                "temperature": 0.2,
-                "return_full_text": False
-            },
-            "options": {
-                "wait_for_model": True
-            }
-        }
+            messages.append({"role": "system", "content": system_prompt})
+        messages.append({"role": "user", "content": prompt})
 
         last_error = None
         for model in models_to_try:
-            url = f"https://api-inference.huggingface.co/models/{model}"
+            url = "https://router.huggingface.co/v1/chat/completions"
+            
+            payload = {
+                "model": model,
+                "messages": messages,
+                "max_tokens": max_tokens,
+                "temperature": 0.2
+            }
             
             try:
                 async with httpx.AsyncClient(timeout=timeout) as client:

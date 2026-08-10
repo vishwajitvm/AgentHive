@@ -5,7 +5,14 @@ from app.logging.logger import get_logger
 logger = get_logger(__name__)
 
 class GroqProvider(BaseLLMProvider):
-    """Groq Cloud model provider adapter."""
+    """Groq API provider adapter utilizing their OpenAI-compatible endpoint."""
+    fallback_models = [
+        "llama-3.3-70b-versatile",
+        "llama-3.1-8b-instant",
+        "mixtral-8x7b-32768",
+        "gemma2-9b-it",
+        "gemma-7b-it"
+    ]
 
     async def generate(
         self,

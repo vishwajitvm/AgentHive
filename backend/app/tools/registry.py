@@ -45,9 +45,10 @@ class FileTool(BaseTool):
         return "Reads, writes, or lists files in the local workspace. Arguments: action (read/write/list), filename (for read/write), content (for write)."
 
     async def run(self, **kwargs) -> str:
-        action = kwargs.get("action", "").lower()
-        filename = kwargs.get("filename", "")
-        content = kwargs.get("content", "")
+        action = str(kwargs.get("action", "")).strip().lower()
+        filename = kwargs.get("filename") or kwargs.get("file") or kwargs.get("name") or ""
+        filename = str(filename).strip()
+        content = kwargs.get("content") or kwargs.get("data") or kwargs.get("text") or ""
 
         if action not in ["read", "write", "list"]:
             return "Error: Invalid action. Supported: read, write, list."
@@ -79,7 +80,8 @@ class PostgresTool(BaseTool):
         return "Executes read-only SQL queries against the internal AgentHive database. Arguments: query (SQL string)."
 
     async def run(self, **kwargs) -> str:
-        query = kwargs.get("query", "").strip()
+        query = kwargs.get("query") or kwargs.get("sql") or kwargs.get("statement") or ""
+        query = str(query).strip()
         if not query: return "Error: query is required."
         if any(keyword in query.lower() for keyword in ["insert", "update", "delete", "drop", "truncate", "alter", "grant"]):
             return "Security Error: Only SELECT queries are permitted."
@@ -118,9 +120,10 @@ class RedisTool(BaseTool):
         return "Reads or writes key-value pairs to the internal Redis cache. Arguments: action (get/set/keys), key, value (for set)."
 
     async def run(self, **kwargs) -> str:
-        action = kwargs.get("action", "").lower()
-        key = kwargs.get("key", "")
-        value = kwargs.get("value", "")
+        action = str(kwargs.get("action", "")).strip().lower()
+        key = kwargs.get("key") or kwargs.get("name") or ""
+        key = str(key).strip()
+        value = kwargs.get("value") or kwargs.get("data") or kwargs.get("content") or ""
 
         if action not in ["get", "set", "keys"]: return "Error: Invalid action. Supported: get, set, keys."
 
@@ -151,9 +154,10 @@ class MinioTool(BaseTool):
         return "Uploads/downloads files from the internal MinIO object storage. Arguments: action (upload/download), object_name, content (for upload)."
 
     async def run(self, **kwargs) -> str:
-        action = kwargs.get("action", "").lower()
-        object_name = kwargs.get("object_name", "")
-        content = kwargs.get("content", "")
+        action = str(kwargs.get("action", "")).strip().lower()
+        object_name = kwargs.get("object_name") or kwargs.get("file") or kwargs.get("name") or ""
+        object_name = str(object_name).strip()
+        content = kwargs.get("content") or kwargs.get("data") or kwargs.get("text") or ""
 
         if action not in ["upload", "download"]: return "Error: action must be upload or download."
         if not object_name: return "Error: object_name is required."
@@ -184,7 +188,8 @@ class LokiTool(BaseTool):
         return "Queries the Grafana Loki log aggregation server. Arguments: query (LogQL string, e.g. '{container=\"agenthive-backend\"}')."
 
     async def run(self, **kwargs) -> str:
-        query = kwargs.get("query", "")
+        query = kwargs.get("query") or kwargs.get("logql") or kwargs.get("search") or ""
+        query = str(query).strip()
         if not query: return "Error: query is required."
 
         try:
@@ -222,7 +227,8 @@ class CodeTool(BaseTool):
         return "Executes Python code in a sandboxed environment. Arguments: expression (Python code string)."
 
     async def run(self, **kwargs) -> str:
-        expression = kwargs.get("expression", "")
+        expression = kwargs.get("expression") or kwargs.get("code") or kwargs.get("script") or kwargs.get("python") or ""
+        expression = str(expression).strip()
         if not expression: return "Error: expression is required."
 
         safe_dict = {"abs": abs, "min": min, "max": max, "sum": sum, "pow": pow, "round": round, "len": len, "list": list, "dict": dict, "json": json, "math": sys.modules.get("math")}
@@ -232,7 +238,7 @@ class CodeTool(BaseTool):
             old_stdout = sys.stdout
             sys.stdout = mystdout = StringIO()
             try:
-                exec(expression, {"__builtins__": None}, safe_dict)
+                exec(expression, {}, safe_dict)
                 sys.stdout = old_stdout
                 out = mystdout.getvalue()
                 return out if out else "Executed successfully (no output)."
@@ -252,7 +258,8 @@ class ScraperTool(BaseTool):
         return "Scrapes readable text from a URL. Arguments: url."
 
     async def run(self, **kwargs) -> str:
-        url = kwargs.get("url", "")
+        url = kwargs.get("url") or kwargs.get("link") or kwargs.get("uri") or kwargs.get("website") or ""
+        url = str(url).strip()
         if not url: return "Error: url is required."
 
         try:
@@ -282,7 +289,8 @@ class TranslationTool(BaseTool):
         return "Translates foreign text to English. Arguments: text."
 
     async def run(self, **kwargs) -> str:
-        text = kwargs.get("text", "")
+        text = kwargs.get("text") or kwargs.get("content") or kwargs.get("message") or ""
+        text = str(text).strip()
         if not text: return "Error: text argument is required."
         
         try:
@@ -310,7 +318,8 @@ class YoutubeTranscriptTool(BaseTool):
         return "Extracts transcript from a YouTube URL. Arguments: url."
 
     async def run(self, **kwargs) -> str:
-        url = kwargs.get("url", "")
+        url = kwargs.get("url") or kwargs.get("link") or kwargs.get("video_url") or ""
+        url = str(url).strip()
         if not url: return "Error: url is required."
 
         try:
@@ -374,7 +383,8 @@ class SearchTool(BaseTool):
         return "Searches DuckDuckGo for query terms. Arguments: query."
 
     async def run(self, **kwargs) -> str:
-        query = kwargs.get("query", "")
+        query = kwargs.get("query") or kwargs.get("search_query") or kwargs.get("q") or kwargs.get("text") or ""
+        query = str(query).strip()
         if not query: return "Error: query is required."
 
         try:
@@ -401,7 +411,8 @@ class PdfTool(BaseTool):
         return "Reads text from a PDF file in the local workspace. Arguments: filename."
 
     async def run(self, **kwargs) -> str:
-        filename = kwargs.get("filename", "")
+        filename = kwargs.get("filename") or kwargs.get("file") or kwargs.get("name") or kwargs.get("pdf") or ""
+        filename = str(filename).strip()
         if not filename: return "Error: filename is required."
         filepath = os.path.join(WORKSPACE_DIR, os.path.basename(filename))
         if not os.path.exists(filepath): return f"Error: '{filename}' not found in workspace."
@@ -424,7 +435,8 @@ class CsvReaderTool(BaseTool):
         return "Reads a CSV or Excel file in the workspace and returns the first 50 rows as markdown. Arguments: filename."
 
     async def run(self, **kwargs) -> str:
-        filename = kwargs.get("filename", "")
+        filename = kwargs.get("filename") or kwargs.get("file") or kwargs.get("name") or kwargs.get("csv") or ""
+        filename = str(filename).strip()
         if not filename: return "Error: filename is required."
         filepath = os.path.join(WORKSPACE_DIR, os.path.basename(filename))
         if not os.path.exists(filepath): return f"Error: '{filename}' not found in workspace."

@@ -101,6 +101,7 @@ Located in `backend/app/llm/router.py`, the `LLMRouter` provides both sequential
 3. **`FIRST_COMPLETED` Race**: Tasks are dispatched concurrently using `asyncio.create_task()` and monitored with `asyncio.wait(..., return_when=asyncio.FIRST_COMPLETED)`.
 4. **Cancellation**: As soon as the first provider returns a successful non-error response, all remaining pending tasks are immediately cancelled to save compute and API tokens.
 5. **Fallback Safety**: If all parallel tasks time out or error out, the router automatically falls back to sequential fallback generation.
+6. **Smart Circuit Breaker (Rate Limit Cooldown)**: If an LLM provider hits a Rate Limit (`429 RESOURCE_EXHAUSTED`), the Router intercepts the error, instantly breaks out of retry loops, and places the provider on a 60-second cooldown blocklist. Subsequent requests will immediately skip the cooled-down provider, eliminating wasted latency on fruitless retries.
 
 ---
 

@@ -20,9 +20,11 @@ class DocxTool(BaseTool):
         return "Reads, creates, or appends to Microsoft Word .docx files in workspace. Arguments: action ('read'/'create'/'append'), filename, content (text or paragraph content)."
 
     async def run(self, **kwargs) -> str:
-        action = kwargs.get("action", "").strip().lower()
-        filename = kwargs.get("filename", "").strip()
-        content = kwargs.get("content", "").strip()
+        action = str(kwargs.get("action", "")).strip().lower()
+        filename = kwargs.get("filename") or kwargs.get("file") or kwargs.get("name") or ""
+        filename = str(filename).strip()
+        content = kwargs.get("content") or kwargs.get("text") or kwargs.get("data") or ""
+        content = str(content).strip()
 
         if action not in ["read", "create", "append"]:
             return "Error: action must be 'read', 'create', or 'append'."
@@ -88,9 +90,10 @@ class ExcelWriterTool(BaseTool):
         return "Creates or updates Excel spreadsheets (.xlsx) in workspace. Arguments: filename, data (JSON list of dicts/lists or CSV formatted string), sheet_name (optional, default 'Sheet1')."
 
     async def run(self, **kwargs) -> str:
-        filename = kwargs.get("filename", "").strip()
-        data_input = kwargs.get("data", "")
-        sheet_name = kwargs.get("sheet_name", "Sheet1").strip()
+        filename = kwargs.get("filename") or kwargs.get("file") or kwargs.get("name") or ""
+        filename = str(filename).strip()
+        data_input = kwargs.get("data") or kwargs.get("content") or kwargs.get("rows") or ""
+        sheet_name = str(kwargs.get("sheet_name", "Sheet1")).strip()
 
         if not filename:
             return "Error: filename parameter is required."
@@ -142,9 +145,10 @@ class PptxTool(BaseTool):
         return "Reads or creates PowerPoint presentation decks (.pptx) in workspace. Arguments: action ('read'/'create'), filename, slides (JSON array of slide dicts with 'title' and 'bullets'/'content' for create)."
 
     async def run(self, **kwargs) -> str:
-        action = kwargs.get("action", "").strip().lower()
-        filename = kwargs.get("filename", "").strip()
-        slides_input = kwargs.get("slides", "")
+        action = str(kwargs.get("action", "")).strip().lower()
+        filename = kwargs.get("filename") or kwargs.get("file") or kwargs.get("name") or ""
+        filename = str(filename).strip()
+        slides_input = kwargs.get("slides") or kwargs.get("content") or kwargs.get("data") or ""
 
         if action not in ["read", "create"]:
             return "Error: action must be 'read' or 'create'."
@@ -224,7 +228,8 @@ class OcrTool(BaseTool):
         return "Extracts text from image files (PNG, JPG, TIFF) in workspace using OCR with graceful fallback. Arguments: filename."
 
     async def run(self, **kwargs) -> str:
-        filename = kwargs.get("filename", "").strip()
+        filename = kwargs.get("filename") or kwargs.get("file") or kwargs.get("name") or kwargs.get("image") or ""
+        filename = str(filename).strip()
         if not filename:
             return "Error: filename parameter is required."
 
@@ -263,8 +268,9 @@ class JsonYamlTool(BaseTool):
         return "Validates, formats, or converts between JSON and YAML. Arguments: action ('json_to_yaml'/'yaml_to_json'/'validate_json'/'validate_yaml'/'format_json'), content."
 
     async def run(self, **kwargs) -> str:
-        action = kwargs.get("action", "").strip().lower()
-        content = kwargs.get("content", "").strip()
+        action = str(kwargs.get("action", "")).strip().lower()
+        content = kwargs.get("content") or kwargs.get("data") or kwargs.get("text") or kwargs.get("json") or kwargs.get("yaml") or ""
+        content = str(content).strip()
 
         if not action or not content:
             return "Error: Both 'action' and 'content' parameters are required."

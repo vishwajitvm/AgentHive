@@ -31,13 +31,13 @@ class LLMRouter:
     """
 
     def __init__(self):
+        self._cooldowns = {}
         self.providers = {
             "gemini": GeminiProvider(),
             "ollama": OllamaProvider(),
             "openai": OpenAIProvider(),
             "huggingface": HuggingFaceProvider(),
-            "groq": GroqProvider(),
-            "nvidia": NvidiaProvider()
+            "groq": GroqProvider()
         }
 
     async def _get_api_key(self, db: AsyncSession, provider: ModelProvider) -> Optional[str]:
@@ -91,6 +91,10 @@ class LLMRouter:
         last_error = None
         
         for p_name in fallback_names:
+            if p_name in self._cooldowns and time.time() < self._cooldowns[p_name]:
+                logger.warning("Provider is in cooldown, skipping", provider=p_name)
+                continue
+                
             # Query provider info
             result = await db.execute(
                 select(ModelProvider).where(ModelProvider.provider_type == p_name)
@@ -104,9 +108,8 @@ class LLMRouter:
                     "gemini": "gemini-1.5-flash",
                     "ollama": settings.ollama_default_model,
                     "openai": "gpt-4o-mini",
-                    "huggingface": "meta-llama/Llama-3.2-1B-Instruct",
-                    "groq": "llama-3.3-70b-versatile",
-                    "nvidia": "meta/llama-3.3-70b-instruct"
+                    "huggingface": "meta-llama/Llama-3.3-70B-Instruct",
+                    "groq": "llama-3.3-70b-versatile"
                 }
                 provider = ModelProvider(
                     provider_name=p_name.capitalize(),
@@ -130,71 +133,88 @@ class LLMRouter:
 
             api_key = await self._get_api_key(db, provider)
             logger.info("Resolved API Key for provider", provider=p_name, has_key=bool(api_key))
-            model = model_override or provider.default_model
+            
+            if model_override:
+                models_to_try = [model_override]
+            else:
+                models_to_try = getattr(adapter, 'fallback_models', [provider.default_model])
 
-            # Try execution with retries
-            for attempt in range(policy.retry_count + 1):
-                start_time = time.perf_counter()
-                try:
-                    logger.info("Attempting generation", provider=p_name, model=model, attempt=attempt)
-                    response_text = await adapter.generate(
-                        prompt=prompt,
-                        system_prompt=system_prompt,
-                        max_tokens=policy.max_output_tokens,
-                        timeout=float(policy.timeout_seconds),
-                        model_name=model,
-                        api_key=api_key,
-                        base_url=provider.base_url
-                    )
+            provider_rate_limited = False
+            for model in models_to_try:
+                if provider_rate_limited:
+                    break
                     
-                    latency_ms = int((time.perf_counter() - start_time) * 1000)
-                    
-                    # Estimate token usage
-                    prompt_tokens = len(prompt) // 4
-                    completion_tokens = len(response_text) // 4
-                    
-                    # Save call record
-                    llm_call = LLMCall(
-                        agent_run_id=agent_run_id,
-                        request_id=request_id,
-                        provider=p_name,
-                        model=model,
-                        prompt_tokens=prompt_tokens,
-                        completion_tokens=completion_tokens,
-                        latency_ms=latency_ms,
-                        status="success",
-                        response_text=response_text
-                    )
-                    db.add(llm_call)
-                    await db.commit()
-                    
-                    logger.info("LLM Generation succeeded", provider=p_name, latency_ms=latency_ms)
-                    return response_text
-                    
-                except Exception as exc:
-                    latency_ms = int((time.perf_counter() - start_time) * 1000)
-                    last_error = exc
-                    
-                    # Save error call record
-                    llm_call = LLMCall(
-                        agent_run_id=agent_run_id,
-                        request_id=request_id,
-                        provider=p_name,
-                        model=model,
-                        prompt_tokens=len(prompt) // 4,
-                        completion_tokens=0,
-                        latency_ms=latency_ms,
-                        status="error",
-                        failure_reason=str(exc),
-                        fallback_reason=f"Attempt {attempt} failed. Fallback triggered."
-                    )
-                    db.add(llm_call)
-                    await db.commit()
-                    
-                    logger.warn("LLM Attempt failed", provider=p_name, error=str(exc), latency_ms=latency_ms)
-                    # Pause briefly before retry
-                    import asyncio
-                    await asyncio.sleep(0.5)
+                # Try execution with retries
+                for attempt in range(policy.retry_count + 1):
+                    start_time = time.perf_counter()
+                    try:
+                        logger.info("Attempting generation", provider=p_name, model=model, attempt=attempt)
+                        response_text = await adapter.generate(
+                            prompt=prompt,
+                            system_prompt=system_prompt,
+                            max_tokens=policy.max_output_tokens,
+                            timeout=float(policy.timeout_seconds),
+                            model_name=model,
+                            api_key=api_key,
+                            base_url=provider.base_url
+                        )
+                        
+                        latency_ms = int((time.perf_counter() - start_time) * 1000)
+                        
+                        # Estimate token usage
+                        prompt_tokens = len(prompt) // 4
+                        completion_tokens = len(response_text) // 4
+                        
+                        # Save call record
+                        llm_call = LLMCall(
+                            agent_run_id=agent_run_id,
+                            request_id=request_id,
+                            provider=p_name,
+                            model=model,
+                            prompt_tokens=prompt_tokens,
+                            completion_tokens=completion_tokens,
+                            latency_ms=latency_ms,
+                            status="success",
+                            response_text=response_text
+                        )
+                        db.add(llm_call)
+                        await db.commit()
+                        
+                        logger.info("LLM Generation succeeded", provider=p_name, latency_ms=latency_ms)
+                        return response_text
+                        
+                    except Exception as exc:
+                        latency_ms = int((time.perf_counter() - start_time) * 1000)
+                        last_error = exc
+                        
+                        # Save error call record
+                        llm_call = LLMCall(
+                            agent_run_id=agent_run_id,
+                            request_id=request_id,
+                            provider=p_name,
+                            model=model,
+                            prompt_tokens=len(prompt) // 4,
+                            completion_tokens=0,
+                            latency_ms=latency_ms,
+                            status="error",
+                            failure_reason=str(exc),
+                            fallback_reason=f"Attempt {attempt} failed. Fallback triggered."
+                        )
+                        db.add(llm_call)
+                        await db.commit()
+                        
+                        logger.warn("LLM Attempt failed", provider=p_name, error=str(exc), latency_ms=latency_ms)
+                        
+                        exc_str = str(exc).lower()
+                        if "429" in exc_str or "resource_exhausted" in exc_str or "rate limit" in exc_str or "too many requests" in exc_str:
+                            logger.warning("Rate limit detected. Adding provider to cooldown blocklist for 60 seconds.", provider=p_name)
+                            self._cooldowns[p_name] = time.time() + 60
+                            provider_rate_limited = True
+                            break
+                            
+                        # Pause briefly before retry
+                        import asyncio
+                        await asyncio.sleep(0.5)
                     
         # All fallbacks failed
         logger.error("All providers in fallback chain failed", errors=str(last_error))
@@ -233,6 +253,9 @@ class LLMRouter:
 
         # Filter out valid provider adapters
         target_providers = [p for p in providers if p in self.providers]
+        # Filter out cooled down providers
+        target_providers = [p for p in target_providers if p not in self._cooldowns or time.time() >= self._cooldowns[p]]
+        
         if not target_providers:
             target_providers = ["gemini", "groq", "ollama"]
 
@@ -244,9 +267,8 @@ class LLMRouter:
             "gemini": "gemini-1.5-flash",
             "ollama": settings.ollama_default_model,
             "openai": "gpt-4o-mini",
-            "huggingface": "meta-llama/Llama-3.2-1B-Instruct",
-            "groq": "llama-3.3-70b-versatile",
-            "nvidia": "meta/llama-3.3-70b-instruct"
+            "huggingface": "meta-llama/Llama-3.3-70B-Instruct",
+            "groq": "llama-3.3-70b-versatile"
         }
 
         for p_name in target_providers:
@@ -315,6 +337,11 @@ class LLMRouter:
                 }
             except Exception as exc:
                 latency_ms = int((time.perf_counter() - start_time) * 1000)
+                exc_str = str(exc).lower()
+                if "429" in exc_str or "resource_exhausted" in exc_str or "rate limit" in exc_str or "too many requests" in exc_str:
+                    logger.warning("Rate limit detected in parallel request. Adding provider to cooldown blocklist for 60 seconds.", provider=p_name)
+                    self._cooldowns[p_name] = time.time() + 60
+                    
                 return {
                     "status": "error",
                     "provider": p_name,
